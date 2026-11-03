@@ -1,0 +1,5 @@
+# apps/mobile (Flutter) is intentionally NOT listed: it is managed by its own pubspec.yaml.
+packages:
+  - apps/web
+  - apps/api
+  - packages/*

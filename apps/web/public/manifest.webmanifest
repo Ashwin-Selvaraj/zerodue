@@ -1,0 +1,13 @@
+{
+  "name": "ZeroDue",
+  "short_name": "ZeroDue",
+  "description": "Track every rupee. Clear every loan.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "en-IN",
+  "background_color": "#ffffff",
+  "theme_color": "#0f766e",
+  "icons": [{ "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

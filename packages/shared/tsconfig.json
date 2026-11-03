@@ -1,0 +1,5 @@
+{
+  "extends": "@zerodue/config/tsconfig/library.json",
+  "compilerOptions": { "outDir": "dist", "rootDir": "." },
+  "include": ["src", "vitest.config.ts"]
+}
