@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { APP_NAME, APP_TAGLINE } from '@zerodue/shared';
+import { ServiceWorkerRegister } from '@/components/service-worker-register';
+import { AuthProvider } from '@/lib/auth-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -8,6 +10,7 @@ export const metadata: Metadata = {
   applicationName: APP_NAME,
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: APP_NAME },
+  icons: { icon: '/icons/icon.svg', apple: '/icons/icon.svg' },
 };
 
 export const viewport: Viewport = {
@@ -20,7 +23,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-IN">
       <body className="min-h-screen bg-white text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
