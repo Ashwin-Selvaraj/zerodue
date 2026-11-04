@@ -13,6 +13,7 @@
   "dependencies": {
     "@zerodue/shared": "workspace:*",
     "dexie": "^4.4.7",
+    "dexie-react-hooks": "^1.1.7",
     "next": "^15.1.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -27,6 +28,7 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.2.0",
+    "fake-indexeddb": "^6.2.7",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.2",
