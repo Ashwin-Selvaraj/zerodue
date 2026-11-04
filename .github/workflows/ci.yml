@@ -37,6 +37,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm test
+      - name: Finance engine coverage (100% branches required)
+        run: pnpm --filter @zerodue/shared test:coverage
       - name: Apply migrations to the test database
         run: pnpm --filter @zerodue/api exec prisma migrate deploy
         env:
