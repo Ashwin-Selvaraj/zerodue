@@ -1,0 +1,790 @@
+// ZeroDue data model (M0 design). All money is integer PAISE (Int). Dates: `@db.Date` for calendar
+// dates, timestamptz for instants. Synced entities carry the SyncFields block (see docs/M0/03-data-model.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum AccountType {
+  BANK
+  CREDIT_CARD
+  CASH
+  WALLET
+  LOAN
+}
+
+enum CategoryKind {
+  EXPENSE
+  INCOME
+  BOTH
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+  TRANSFER
+}
+
+enum TransactionStatus {
+  POSTED
+  PENDING_CATEGORY // captured, awaiting one-tap categorisation
+  IGNORED // misparsed / not a real transaction
+}
+
+enum TransactionSourceKind {
+  MANUAL
+  SMS_BANK
+  SMS_UPI
+  STATEMENT_IMPORT
+  RECURRING
+  SYSTEM
+}
+
+enum CategorisedVia {
+  MANUAL
+  RULE
+  FLUTTER
+  PUSH
+  IMPORT
+}
+
+enum RuleMatchType {
+  MERCHANT_EQUALS
+  MERCHANT_CONTAINS
+  VPA_EQUALS
+  REMARKS_REGEX
+}
+
+enum RecurringKind {
+  INCOME
+  EXPENSE
+}
+
+enum Frequency {
+  MONTHLY
+  QUARTERLY
+  ONE_TIME
+}
+
+enum OccurrenceStatus {
+  UPCOMING
+  PAID // paid (expense) or received (income)
+  SKIPPED
+}
+
+enum LoanKind {
+  EMI
+  FLEXIBLE
+}
+
+enum LoanStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum InterestRounding {
+  ROUND_HALF_UP_RUPEE
+  CARRY_PAISE
+}
+
+enum LoanLedgerKind {
+  INTEREST
+  PAYMENT
+  FEE
+  ADJUSTMENT
+}
+
+enum ReceivableKind {
+  OWED_TO_ME
+  EXPECTED_INCOME
+}
+
+enum ReceivableStatus {
+  EXPECTED
+  RECEIVED
+  CANCELLED
+}
+
+enum GoalStatus {
+  ACTIVE
+  ACHIEVED
+  CANCELLED
+}
+
+enum ContributionStatus {
+  PLEDGED
+  RECEIVED
+}
+
+enum AllocationTarget {
+  LOAN
+  GOAL
+  RETURN_TO_SOURCE
+  UNALLOCATED
+}
+
+enum DeviceKind {
+  ANDROID_COMPANION
+  WEB
+}
+
+enum NotificationChannel {
+  WEB_PUSH
+  IN_APP
+}
+
+enum ReminderState {
+  SCHEDULED
+  SENT
+  SNOOZED
+  DISMISSED
+  ACTED // e.g. "Mark paid" tapped
+}
+
+enum ImportStatus {
+  PREVIEW
+  COMMITTED
+  DISCARDED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  CONFLICT_OVERWRITTEN
+}
+
+// ───────────────────────────── Identity & devices ─────────────────────────────
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  name         String?
+  timezone     String   @default("Asia/Kolkata")
+  createdAt    DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @db.Timestamptz(6)
+
+  settings          UserSettings?
+  refreshTokens     RefreshToken[]
+  devices           Device[]
+  pairingCodes      PairingCode[]
+  pushSubscriptions PushSubscription[]
+  accounts          Account[]
+  categories        Category[]
+  categoryRules     CategoryRule[]
+  transactions      Transaction[]
+  recurringItems    RecurringItem[]
+  occurrences       RecurringOccurrence[]
+  loans             Loan[]
+  receivables       Receivable[]
+  goals             Goal[]
+  allocationRules   AllocationRule[]
+  scenarios         Scenario[]
+  reminders         Reminder[]
+  importBatches     ImportBatch[]
+  backups           Backup[]
+  auditLogs         AuditLog[]
+}
+
+model UserSettings {
+  userId             String           @id @db.Uuid
+  interestRounding   InterestRounding @default(ROUND_HALF_UP_RUPEE)
+  storeRawSms        Boolean          @default(false)
+  smsSenderAllowList String[]         @default(["*-ICICIB", "*-ICICIT", "*-ICICIS"])
+  dedupeWindowMins   Int              @default(10)
+  cashBufferPaise    Int              @default(0) // timing-risk threshold
+  forecastMonths     Int              @default(12)
+  signupOpen         Boolean          @default(true)
+  updatedAt          DateTime         @updatedAt @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  deviceId  String?   @db.Uuid
+  expiresAt DateTime  @db.Timestamptz(6)
+  revokedAt DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Device {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @db.Uuid
+  kind       DeviceKind
+  name       String
+  tokenHash  String?    @unique // SHA-256 of the device bearer token (Android only)
+  lastSeenAt DateTime?  @db.Timestamptz(6)
+  revokedAt  DateTime?  @db.Timestamptz(6)
+  createdAt  DateTime   @default(now()) @db.Timestamptz(6)
+
+  user     User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources  TransactionSource[]
+  pushSubs PushSubscription[]
+
+  @@index([userId, revokedAt])
+}
+
+model PairingCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  codeHash  String    @unique
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  deviceId  String?  @db.Uuid
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+// ───────────────────────────── Accounts, categories, rules ─────────────────────────────
+
+model Account {
+  id               String      @id @default(uuid()) @db.Uuid
+  userId           String      @db.Uuid
+  name             String
+  type             AccountType
+  last4            String?     @db.VarChar(4)
+  balancePaise     Int         @default(0) // user-set anchor balance
+  balanceAsOf      DateTime?   @db.Date
+  creditLimitPaise Int?
+  archived         Boolean     @default(false)
+
+  // sync fields
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]   @relation("TxnAccount")
+  transfersIn    Transaction[]   @relation("TxnToAccount")
+  recurringItems RecurringItem[]
+  loans          Loan[]
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt, id])
+}
+
+model Category {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @db.Uuid
+  name      String
+  kind      CategoryKind @default(EXPENSE)
+  parentId  String?      @db.Uuid
+  icon      String?
+  color     String?
+  sortOrder Int          @default(0)
+  quickPick Boolean      @default(false) // shown as notification action button
+
+  // sync fields
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent       Category?       @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Category[]      @relation("CategoryTree")
+  transactions Transaction[]
+  rules        CategoryRule[]
+  recurring    RecurringItem[]
+  receivables  Receivable[]
+
+  @@unique([userId, parentId, name])
+  @@index([userId, updatedAt, id])
+}
+
+model CategoryRule {
+  id         String        @id @default(uuid()) @db.Uuid
+  userId     String        @db.Uuid
+  matchType  RuleMatchType
+  pattern    String
+  categoryId String        @db.Uuid
+  priority   Int           @default(100)
+  enabled    Boolean       @default(true)
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchType, pattern])
+  @@index([userId, enabled, priority])
+}
+
+// ───────────────────────────── Transactions ─────────────────────────────
+
+model Transaction {
+  id                 String                @id @default(uuid()) @db.Uuid // generated by the client when offline
+  userId             String                @db.Uuid
+  type               TransactionType
+  status             TransactionStatus     @default(POSTED)
+  amountPaise        Int // always positive; direction comes from `type`
+  accountId          String                @db.Uuid
+  toAccountId        String?               @db.Uuid // TRANSFER only
+  categoryId         String?               @db.Uuid
+  categorisedVia     CategorisedVia?
+  occurredAt         DateTime              @db.Timestamptz(6)
+  merchant           String?
+  vpa                String?
+  note               String?
+  tags               String[]              @default([])
+  upiRef             String? // UPI reference / RRN, strongest dedupe key
+  last4              String?               @db.VarChar(4) // card / account tail parsed from SMS
+  source             TransactionSourceKind @default(MANUAL)
+  receiptKey         String? // object-store key of the receipt photo
+  loanId             String?               @db.Uuid
+  occurrenceId       String?               @db.Uuid
+  receivableId       String?               @db.Uuid
+  goalContributionId String?               @db.Uuid
+
+  // sync fields
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account       Account              @relation("TxnAccount", fields: [accountId], references: [id])
+  toAccount     Account?             @relation("TxnToAccount", fields: [toAccountId], references: [id])
+  category      Category?            @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  loan          Loan?                @relation(fields: [loanId], references: [id], onDelete: SetNull)
+  occurrence    RecurringOccurrence? @relation("OccurrenceTxn", fields: [occurrenceId], references: [id], onDelete: SetNull)
+  receivable    Receivable?          @relation("ReceivableTxn", fields: [receivableId], references: [id], onDelete: SetNull)
+  contribution  GoalContribution?    @relation("ContributionTxn", fields: [goalContributionId], references: [id], onDelete: SetNull)
+  sources       TransactionSource[]
+  ledgerEntries LoanLedgerEntry[]
+
+  @@index([userId, occurredAt(sort: Desc)])
+  @@index([userId, status])
+  @@index([userId, categoryId, occurredAt])
+  @@index([userId, accountId, occurredAt])
+  @@index([userId, upiRef])
+  @@index([userId, amountPaise, type, occurredAt]) // dedupe window lookup
+  @@index([userId, updatedAt, id]) // sync pull cursor
+}
+
+// One row per origin of a transaction (SMS, UPI app SMS, statement row, manual). A transaction merged
+// from several messages keeps a link to every source.
+model TransactionSource {
+  id             String                @id @default(uuid()) @db.Uuid
+  transactionId  String                @db.Uuid
+  userId         String                @db.Uuid
+  kind           TransactionSourceKind
+  deviceId       String?               @db.Uuid
+  senderId       String?
+  messageHash    String? // salted hash of the SMS body
+  rawBody        String? // only when UserSettings.storeRawSms
+  parsed         Json?
+  upiRef         String?
+  importBatchId  String?               @db.Uuid
+  importRowIndex Int?
+  receivedAt     DateTime              @db.Timestamptz(6)
+  createdAt      DateTime              @default(now()) @db.Timestamptz(6)
+
+  transaction Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  device      Device?      @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, messageHash]) // exact retry of the same SMS is a no-op
+  @@index([transactionId])
+  @@index([userId, upiRef])
+}
+
+// ───────────────────────────── Recurring items & bills ─────────────────────────────
+
+model RecurringItem {
+  id               String        @id @default(uuid()) @db.Uuid
+  userId           String        @db.Uuid
+  kind             RecurringKind
+  name             String
+  frequency        Frequency
+  dueDay           Int? // 1-31 (clamped to month length); null for ONE_TIME-by-date items
+  anchorMonth      DateTime?     @db.Date // first-of-month; QUARTERLY cycles from here
+  startDate        DateTime      @db.Date
+  endDate          DateTime?     @db.Date
+  categoryId       String?       @db.Uuid
+  accountId        String?       @db.Uuid
+  loanId           String?       @db.Uuid // payments toward this loan
+  reminderLeadDays Int[]         @default([])
+  fixedOutgoing    Boolean       @default(true) // counts in leftover (excludes earmarked income)
+  active           Boolean       @default(true)
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category?               @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  account     Account?                @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  loan        Loan?                   @relation(fields: [loanId], references: [id], onDelete: SetNull)
+  periods     RecurringAmountPeriod[]
+  occurrences RecurringOccurrence[]
+  allocations AllocationRule[]
+
+  @@index([userId, active])
+  @@index([userId, updatedAt, id])
+}
+
+// Step function for the amount: card bill is 20,000 up to the Mar-2027 bill, then 12,000.
+model RecurringAmountPeriod {
+  id              String   @id @default(uuid()) @db.Uuid
+  recurringItemId String   @db.Uuid
+  effectiveFrom   DateTime @db.Date // first due date this amount applies to
+  amountPaise     Int
+  label           String?
+  breakdown       Json? // e.g. {"Fuel":700000,"Mobile EMI":800000,"Buffer":500000}
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  item RecurringItem @relation(fields: [recurringItemId], references: [id], onDelete: Cascade)
+
+  @@unique([recurringItemId, effectiveFrom])
+}
+
+model RecurringOccurrence {
+  id                  String           @id @default(uuid()) @db.Uuid
+  userId              String           @db.Uuid
+  recurringItemId     String           @db.Uuid
+  dueDate             DateTime         @db.Date
+  label               String? // e.g. "Oct 2026 bill"
+  expectedAmountPaise Int
+  status              OccurrenceStatus @default(UPCOMING)
+  paidAt              DateTime?        @db.Timestamptz(6)
+  paidAmountPaise     Int?
+  snoozedUntil        DateTime?        @db.Timestamptz(6)
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item         RecurringItem @relation(fields: [recurringItemId], references: [id], onDelete: Cascade)
+  transactions Transaction[] @relation("OccurrenceTxn")
+  reminders    Reminder[]
+
+  @@unique([recurringItemId, dueDate])
+  @@index([userId, status, dueDate])
+  @@index([userId, updatedAt, id])
+}
+
+// ───────────────────────────── Loans ─────────────────────────────
+
+model Loan {
+  id                 String            @id @default(uuid()) @db.Uuid
+  userId             String            @db.Uuid
+  name               String
+  kind               LoanKind
+  status             LoanStatus        @default(ACTIVE)
+  accountId          String?           @db.Uuid
+  originalPaise      Int? // sanctioned / original principal, if known
+  outstandingPaise   Int? // balance as of `outstandingAsOf`; null = not entered yet
+  outstandingAsOf    DateTime?         @db.Date
+  annualRateBps      Int? // 8.5% = 850
+  emiPaise           Int? // EMI loans
+  emiDueDay          Int?
+  paymentDay         Int? // FLEXIBLE: day of month payments are made; null = month-end
+  interestStartMonth DateTime?         @db.Date // first-of-month interest starts accruing
+  roundingOverride   InterestRounding?
+  targetPayoffMonth  DateTime?         @db.Date
+  closedAt           DateTime?         @db.Date
+  notes              String?
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account         Account?             @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  ledger          LoanLedgerEntry[]
+  plannedPayments LoanPlannedPayment[]
+  transactions    Transaction[]
+  recurringItems  RecurringItem[]
+  allocations     AllocationRule[]
+  scenarios       Scenario[]
+
+  @@index([userId, status])
+  @@index([userId, updatedAt, id])
+}
+
+// Actual posted history: interest postings and payments. Projections are never stored.
+model LoanLedgerEntry {
+  id                String         @id @default(uuid()) @db.Uuid
+  loanId            String         @db.Uuid
+  kind              LoanLedgerKind
+  month             DateTime       @db.Date // first-of-month the entry belongs to
+  effectiveDate     DateTime       @db.Date
+  amountPaise       Int // positive; INTEREST increases balance, PAYMENT decreases it
+  balanceAfterPaise Int
+  transactionId     String?        @db.Uuid
+  note              String?
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  loan        Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  // one automatic INTEREST row per loan per month
+  @@unique([loanId, month, kind, effectiveDate])
+  @@index([loanId, effectiveDate])
+}
+
+// Manual per-month override of the "sweep" payment policy.
+model LoanPlannedPayment {
+  id          String   @id @default(uuid()) @db.Uuid
+  loanId      String   @db.Uuid
+  month       DateTime @db.Date
+  amountPaise Int
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, month])
+}
+
+model Scenario {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  loanId    String?  @db.Uuid
+  name      String
+  params    Json // extra payments, rate, monthly payment, target date
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loan Loan? @relation(fields: [loanId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+// ───────────────────────────── Receivables, goals, allocation ─────────────────────────────
+
+model Receivable {
+  id           String           @id @default(uuid()) @db.Uuid
+  userId       String           @db.Uuid
+  kind         ReceivableKind
+  counterparty String
+  description  String?
+  amountPaise  Int
+  expectedDate DateTime         @db.Date
+  status       ReceivableStatus @default(EXPECTED)
+  receivedAt   DateTime?        @db.Timestamptz(6)
+  categoryId   String?          @db.Uuid
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions Transaction[] @relation("ReceivableTxn")
+
+  @@index([userId, status, expectedDate])
+  @@index([userId, updatedAt, id])
+}
+
+model Goal {
+  id                String     @id @default(uuid()) @db.Uuid
+  userId            String     @db.Uuid
+  name              String
+  targetAmountPaise Int
+  targetDate        DateTime?  @db.Date
+  status            GoalStatus @default(ACTIVE)
+  metadata          Json? // e.g. {"item":"gold","weightGrams":8,"purity":"22K"}
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions GoalContribution[]
+  allocations   AllocationRule[]
+
+  @@index([userId, status])
+  @@index([userId, updatedAt, id])
+}
+
+model GoalContribution {
+  id          String             @id @default(uuid()) @db.Uuid
+  goalId      String             @db.Uuid
+  contributor String // "Me", "Brother", ...
+  isSelf      Boolean            @default(false)
+  amountPaise Int
+  status      ContributionStatus @default(PLEDGED)
+  receivedOn  DateTime?          @db.Date
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  goal         Goal          @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  transactions Transaction[] @relation("ContributionTxn")
+
+  @@index([goalId])
+}
+
+// Where a recurring income stream (brother's 60,000) goes, over a date range or until a loan clears.
+model AllocationRule {
+  id                  String           @id @default(uuid()) @db.Uuid
+  userId              String           @db.Uuid
+  recurringItemId     String           @db.Uuid
+  target              AllocationTarget
+  loanId              String?          @db.Uuid
+  goalId              String?          @db.Uuid
+  startMonth          DateTime         @db.Date
+  endMonth            DateTime?        @db.Date
+  endsWhenLoanCleared Boolean          @default(false)
+  priority            Int              @default(100)
+
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  lastDeviceId String?   @db.Uuid
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recurringItem RecurringItem @relation(fields: [recurringItemId], references: [id], onDelete: Cascade)
+  loan          Loan?         @relation(fields: [loanId], references: [id], onDelete: SetNull)
+  goal          Goal?         @relation(fields: [goalId], references: [id], onDelete: SetNull)
+
+  @@index([userId, recurringItemId, startMonth])
+}
+
+// ───────────────────────────── Reminders & notifications ─────────────────────────────
+
+model Reminder {
+  id           String              @id @default(uuid()) @db.Uuid
+  userId       String              @db.Uuid
+  occurrenceId String?             @db.Uuid
+  title        String
+  body         String
+  scheduledFor DateTime            @db.Timestamptz(6)
+  channel      NotificationChannel @default(WEB_PUSH)
+  state        ReminderState       @default(SCHEDULED)
+  sentAt       DateTime?           @db.Timestamptz(6)
+  readAt       DateTime?           @db.Timestamptz(6)
+  dedupeKey    String // e.g. occurrenceId:leadDays:channel
+  payload      Json?
+  createdAt    DateTime            @default(now()) @db.Timestamptz(6)
+
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  occurrence RecurringOccurrence? @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([state, scheduledFor]) // scheduler scan
+}
+
+// ───────────────────────────── Import, backup, audit ─────────────────────────────
+
+model ImportBatch {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @db.Uuid
+  filename  String
+  fileHash  String
+  mapping   Json // column mapping chosen in the UI
+  summary   Json? // counts: new / duplicate / merged / skipped
+  status    ImportStatus @default(PREVIEW)
+  createdAt DateTime     @default(now()) @db.Timestamptz(6)
+
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources TransactionSource[]
+
+  @@unique([userId, fileHash, status]) // re-uploading the same file previews, never double-commits
+  @@index([userId, createdAt])
+}
+
+model Backup {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  label      String?
+  ciphertext Bytes // AES-GCM blob, produced client-side
+  salt       Bytes
+  iv         Bytes
+  kdf        Json // algorithm + iterations/params
+  sizeBytes  Int
+  checksum   String
+  createdAt  DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model AuditLog {
+  id       String      @id @default(uuid()) @db.Uuid
+  userId   String      @db.Uuid
+  entity   String
+  entityId String      @db.Uuid
+  action   AuditAction
+  before   Json?
+  after    Json?
+  deviceId String?     @db.Uuid
+  at       DateTime    @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, entity, entityId, at])
+}
