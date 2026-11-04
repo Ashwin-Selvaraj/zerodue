@@ -11,6 +11,7 @@ import type { AuthResponse, LoginInput, RegisterInput, UserDto } from '@zerodue/
 import { createHmac, randomBytes } from 'node:crypto';
 import { AppConfig } from '../config/app-config';
 import { PrismaService } from '../prisma/prisma.service';
+import { seedUserDefaults } from '../users/defaults';
 
 /** Re-presenting a rotated refresh token inside this window is treated as a parallel tab, not theft. */
 const REFRESH_REUSE_GRACE_MS = 30_000;
@@ -44,13 +45,17 @@ export class AuthService {
     if (existing) throw new ConflictException('Email already registered');
 
     const passwordHash = await hash(input.password);
-    const user = await this.prisma.user.create({
-      data: {
-        email: input.email,
-        passwordHash,
-        name: input.name ?? null,
-        settings: { create: {} },
-      },
+    const user = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          name: input.name ?? null,
+          settings: { create: {} },
+        },
+      });
+      await seedUserDefaults(tx, created.id);
+      return created;
     });
     return this.startSession(user);
   }
