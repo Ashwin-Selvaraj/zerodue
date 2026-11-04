@@ -35,7 +35,7 @@ export const DEFAULT_CATEGORIES: DefaultCategory[] = [
     children: [
       { name: 'Salary', kind: 'INCOME', quickPick: false },
       { name: 'Bonus', kind: 'INCOME', quickPick: false },
-      { name: 'Brother', kind: 'INCOME', quickPick: false },
+      { name: 'Family support', kind: 'INCOME', quickPick: false },
       { name: 'Freelance / one-time', kind: 'INCOME', quickPick: false },
       { name: 'Friend repayment', kind: 'INCOME', quickPick: false },
     ],

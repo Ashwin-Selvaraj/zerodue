@@ -54,7 +54,7 @@ describe('accounts, categories, transactions (e2e)', () => {
           'Income',
           'Salary',
           'Bonus',
-          'Brother',
+          'Family support',
         ]),
       );
       const income = categories.find((c) => c.name === 'Income')!;

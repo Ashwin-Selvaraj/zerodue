@@ -679,7 +679,7 @@ model Goal {
 model GoalContribution {
   id          String             @id @default(uuid()) @db.Uuid
   goalId      String             @db.Uuid
-  contributor String // "Me", "Brother", ...
+  contributor String // "Me", "Sibling", ...
   isSelf      Boolean            @default(false)
   amountPaise Int
   status      ContributionStatus @default(PLEDGED)
@@ -697,7 +697,7 @@ model GoalContribution {
   @@index([goalId])
 }
 
-// Where a recurring income stream (brother's 60,000) goes, over a date range or until a loan clears.
+// Where a recurring income stream (e.g. family support) goes, over a date range or until a loan clears.
 model AllocationRule {
   id                  String           @id @default(uuid()) @db.Uuid
   userId              String           @db.Uuid
