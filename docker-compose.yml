@@ -1,5 +1,8 @@
 name: zerodue
 
+# `docker compose up --build` runs the whole stack. `pnpm db:up` starts only Postgres for local dev.
+# Required in .env: JWT_ACCESS_SECRET and JWT_REFRESH_SECRET (openssl rand -base64 48).
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,6 +21,40 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: '4000'
+      TZ: Asia/Kolkata
+      DATABASE_URL: postgresql://zerodue:zerodue@postgres:5432/zerodue?schema=public
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?Set JWT_REFRESH_SECRET in .env}
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP:-true}
+      # Plain http on localhost: set COOKIE_SECURE=true once you serve over HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - '4000:4000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '3000:3000'
 
 volumes:
   zerodue_pgdata:
