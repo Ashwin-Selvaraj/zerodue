@@ -1,6 +1,8 @@
-// Planned modules (added in later milestones, M2+):
-//   money      – paise <-> rupee helpers, INR formatting (en-IN grouping)
-//   categories – seed category set
-//   loan       – amortisation, waterfall, payoff projection
-//   dto        – request/response DTOs and Zod schemas
+// Planned modules (added in later milestones):
+//   categories – seed category set (M3)
+//   loan       – amortisation, waterfall, payoff projection (M2)
+//   dto        – more request/response DTOs and Zod schemas (as endpoints land)
 export * from './brand';
+export * from './money';
+export * from './dates';
+export * from './dto/auth';
