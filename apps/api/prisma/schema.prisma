@@ -183,6 +183,7 @@ model User {
   transactions      Transaction[]
   recurringItems    RecurringItem[]
   occurrences       RecurringOccurrence[]
+  amountPeriods     RecurringAmountPeriod[]
   loans             Loan[]
   receivables       Receivable[]
   goals             Goal[]
@@ -285,6 +286,7 @@ model Account {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -293,7 +295,7 @@ model Account {
   recurringItems RecurringItem[]
   loans          Loan[]
 
-  @@unique([userId, name])
+  @@index([userId, name])
   @@index([userId, updatedAt, id])
 }
 
@@ -313,6 +315,7 @@ model Category {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -323,7 +326,7 @@ model Category {
   recurring    RecurringItem[]
   receivables  Receivable[]
 
-  @@unique([userId, parentId, name])
+  @@index([userId, parentId, name])
   @@index([userId, updatedAt, id])
 }
 
@@ -340,6 +343,7 @@ model CategoryRule {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -380,6 +384,7 @@ model Transaction {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -452,6 +457,7 @@ model RecurringItem {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user        User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -469,6 +475,7 @@ model RecurringItem {
 // Step function for the amount: card bill is 20,000 up to the Mar-2027 bill, then 12,000.
 model RecurringAmountPeriod {
   id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
   recurringItemId String   @db.Uuid
   effectiveFrom   DateTime @db.Date // first due date this amount applies to
   amountPaise     Int
@@ -479,11 +486,14 @@ model RecurringAmountPeriod {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   item RecurringItem @relation(fields: [recurringItemId], references: [id], onDelete: Cascade)
 
-  @@unique([recurringItemId, effectiveFrom])
+  @@index([recurringItemId, effectiveFrom])
+  @@index([userId, updatedAt, id])
 }
 
 model RecurringOccurrence {
@@ -502,6 +512,7 @@ model RecurringOccurrence {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
