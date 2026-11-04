@@ -90,7 +90,7 @@ export class SyncService {
     const alreadyApplied =
       existing.lastDeviceId === ctx.deviceId &&
       existing.editedAt.getTime() === Date.parse(op.editedAt);
-    if (alreadyApplied) return { ...base, status: 'applied' };
+    if (alreadyApplied) return { ...base, status: 'applied', version: existing.version };
 
     if (!this.incomingWins(existing, op, ctx.deviceId as string)) {
       await this.auditConflict(userId, def, op.id, parsed, this.records.toDto(def, existing), ctx);
@@ -123,8 +123,13 @@ export class SyncService {
   ): SyncOpResult {
     const changed = JSON.stringify(sent) !== JSON.stringify(stored);
     return changed
-      ? { ...base, status: 'applied', serverRow: this.records.toDto(def, row) }
-      : { ...base, status: 'applied' };
+      ? {
+          ...base,
+          status: 'applied',
+          version: row.version,
+          serverRow: this.records.toDto(def, row),
+        }
+      : { ...base, status: 'applied', version: row.version };
   }
 
   private async applyDelete(
@@ -161,8 +166,13 @@ export class SyncService {
         ctx,
       );
     }
-    await this.records.tombstone(userId, def, existing, this.keepLaterEdit(existing, ctx));
-    return { ...base, status: 'applied' };
+    const row = await this.records.tombstone(
+      userId,
+      def,
+      existing,
+      this.keepLaterEdit(existing, ctx),
+    );
+    return { ...base, status: 'applied', version: row.version };
   }
 
   /** True if the device's edit should replace what the server holds. */

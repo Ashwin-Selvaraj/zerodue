@@ -357,6 +357,8 @@ export const syncOpResultSchema = z.object({
   /** applied: stored. conflict: another edit won, see `serverRow`. rejected: invalid, see `error`. */
   status: z.enum(['applied', 'conflict', 'rejected']),
   error: z.string().optional(),
+  /** The record's version after an applied edit; the device keeps it as the base for its next edit. */
+  version: z.number().int().min(1).optional(),
   /** The current server record when this device's edit lost (or on a version-stale delete). */
   serverRow: z.record(z.string(), z.unknown()).optional(),
 });

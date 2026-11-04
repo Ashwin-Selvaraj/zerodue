@@ -73,7 +73,7 @@ describe('offline sync (e2e)', () => {
       const [result] = await push([
         upsert('transaction', id, txn({ merchant: 'Chai' }), at('09:30')),
       ]);
-      expect(result).toMatchObject({ entity: 'transaction', id, status: 'applied' });
+      expect(result).toMatchObject({ entity: 'transaction', id, status: 'applied', version: 1 });
       expect(await fetchTxn(id)).toMatchObject({
         id,
         merchant: 'Chai',
@@ -169,7 +169,7 @@ describe('offline sync (e2e)', () => {
       const id = randomUUID();
       await push([upsert('transaction', id, txn({ note: 'v1' }), at('09:00'))]);
       const [result] = await push([upsert('transaction', id, txn({ note: 'v2' }), at('09:05'), 1)]);
-      expect(result!.status).toBe('applied');
+      expect(result).toMatchObject({ status: 'applied', version: 2 });
       expect(await fetchTxn(id)).toMatchObject({ note: 'v2', version: 2 });
       expect(await conflictsFor(id)).toEqual([]);
     });
