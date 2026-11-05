@@ -85,6 +85,16 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000   # emulator; use yo
 flutter analyze && flutter test
 ```
 
+## Loading your own starting data
+
+Describe your accounts, bills, loans and goals in a JSON file (in rupees) and load them into a running API. Start from [`apps/api/seed/profile.example.json`](apps/api/seed/profile.example.json) and save your copy as `apps/api/seed/profile.local.json`; files ending in `.local.json` are git-ignored, so real figures stay off GitHub.
+
+```bash
+SEED_PASSWORD='your-password' pnpm --filter @zerodue/api seed -- --profile seed/profile.local.json --email you@example.com
+```
+
+The user is created if needed, and everything goes through the same sync endpoint the app uses, so the app picks it up on its next sync. If the account already has loans or bills the seed stops without changing anything; pass `--force` to overwrite them.
+
 ## Deploy
 
 **Whole stack with Docker Compose** — put real `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in `.env`, then `docker compose up --build`. This starts Postgres, the API (applies migrations on start) and the web app. Behind HTTPS set `COOKIE_SECURE=true`, `WEB_ORIGIN` to the web origin, and rebuild web with `NEXT_PUBLIC_API_URL` pointing at the API. Put the web app and API on subdomains of one domain (`app.example.com`, `api.example.com`) so the refresh cookie stays same-site. The Dockerfiles are not yet exercised locally (CI builds them).

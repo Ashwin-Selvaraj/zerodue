@@ -1,0 +1,110 @@
+{
+  "accounts": [
+    { "name": "Salary account", "type": "BANK", "balance": 5000, "balanceAsOf": "2026-11-03" }
+  ],
+  "recurring": [
+    {
+      "key": "salary",
+      "kind": "INCOME",
+      "name": "Salary",
+      "frequency": "MONTHLY",
+      "dueDay": 30,
+      "startDate": "2026-11-01",
+      "category": "Salary",
+      "account": "Salary account",
+      "amounts": [{ "from": "2026-11-01", "rupees": 60000 }]
+    },
+    {
+      "key": "bonus",
+      "kind": "INCOME",
+      "name": "Quarterly bonus",
+      "frequency": "QUARTERLY",
+      "dueDay": 30,
+      "anchorMonth": "2026-11-01",
+      "startDate": "2026-11-01",
+      "category": "Bonus",
+      "amounts": [{ "from": "2026-11-01", "rupees": 20000 }]
+    },
+    {
+      "key": "family",
+      "kind": "INCOME",
+      "name": "Family support",
+      "frequency": "MONTHLY",
+      "dueDay": 1,
+      "startDate": "2026-12-01",
+      "earmarked": true,
+      "category": "Family support",
+      "amounts": [{ "from": "2026-12-01", "rupees": 50000 }]
+    },
+    {
+      "key": "emi",
+      "kind": "EXPENSE",
+      "name": "Personal loan EMI",
+      "frequency": "MONTHLY",
+      "dueDay": 5,
+      "startDate": "2026-11-01",
+      "category": "EMI",
+      "reminderLeadDays": [3, 1],
+      "amounts": [{ "from": "2026-11-01", "rupees": 4000 }]
+    },
+    {
+      "key": "card",
+      "kind": "EXPENSE",
+      "name": "Credit card bill",
+      "frequency": "MONTHLY",
+      "dueDay": 4,
+      "startDate": "2026-11-04",
+      "category": "Card",
+      "reminderLeadDays": [3, 1],
+      "amounts": [
+        { "from": "2026-11-04", "rupees": 15000 },
+        { "from": "2027-05-04", "rupees": 10000 }
+      ]
+    },
+    {
+      "key": "food",
+      "kind": "EXPENSE",
+      "name": "Food and going out",
+      "frequency": "MONTHLY",
+      "dueDay": 15,
+      "startDate": "2026-11-01",
+      "category": "Food & going out",
+      "amounts": [{ "from": "2026-11-01", "rupees": 3000 }]
+    }
+  ],
+  "loans": [
+    {
+      "key": "main",
+      "name": "Main loan",
+      "kind": "FLEXIBLE",
+      "outstanding": 500000,
+      "asOf": "2026-11-01",
+      "annualRatePercent": 9,
+      "interestStartMonth": "2026-11-01"
+    }
+  ],
+  "receivables": [
+    {
+      "kind": "OWED_TO_ME",
+      "counterparty": "A friend",
+      "amount": 15000,
+      "expectedDate": "2026-11-20"
+    }
+  ],
+  "goals": [
+    {
+      "key": "purchase",
+      "name": "New purchase",
+      "target": 100000,
+      "targetDate": "2026-11-30",
+      "contributions": [
+        { "contributor": "Me", "isSelf": true, "amount": 25000 },
+        { "contributor": "Someone else", "amount": 20000 }
+      ]
+    }
+  ],
+  "allocations": [
+    { "stream": "family", "target": "LOAN", "loan": "main", "startMonth": "2026-12-01" }
+  ],
+  "settled": [{ "stream": "card", "dueDate": "2026-11-04" }]
+}

@@ -7,6 +7,7 @@
     "build": "prisma generate && nest build",
     "dev": "prisma generate && nest start --watch",
     "start": "node dist/main.js",
+    "seed": "nest build && node dist/seed/seed.js",
     "lint": "eslint .",
     "pretest": "prisma generate",
     "test": "jest",

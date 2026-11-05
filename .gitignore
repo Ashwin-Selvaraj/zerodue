@@ -35,3 +35,6 @@ apps/mobile/android/local.properties
 apps/mobile/android/key.properties
 apps/mobile/android/app/*.jks
 apps/mobile/android/app/*.keystore
+
+# personal seed data (real figures); never commit
+apps/api/seed/*.local.json
