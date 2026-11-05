@@ -10,6 +10,7 @@ const PAGES = [
   '/bills',
   '/reports',
   '/inbox',
+  '/import',
   '/more',
 ];
 

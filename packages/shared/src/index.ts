@@ -10,3 +10,4 @@ export * from './categories';
 export * from './rules';
 export * from './sms/parser';
 export * from './backup';
+export * from './statement';

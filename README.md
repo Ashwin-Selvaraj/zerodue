@@ -128,6 +128,8 @@ The message reader lives in `packages/shared/src/sms/parser.ts`; `fixtures.json`
 
 The backup format and its tests live in `packages/shared/src/backup/`.
 
+**More → Import statement** reads a CSV exported from a bank. It finds the title row and the date, description, money-out and money-in columns by itself (you can correct any of them), shows every payment before anything is saved, and skips ones you already have: a payment counts as the same when the direction and amount match on the same day or a day either side, and a differing UPI reference rules it out. Imported payments that no rule can file wait in the **Inbox** for a category. Amounts in Indian grouping, `Dr`/`Cr` markers, brackets and signs are understood. Excel files (`.xls`, `.xlsx`) are not read directly yet: save the statement as CSV first. The reader is in `packages/shared/src/statement/`; a layout preset for a specific bank is a small addition once there is a real sample of its file.
+
 ## Deploy
 
 **On a server with HTTPS:** follow [deploy/README.md](deploy/README.md) (Caddy, Postgres backups, updates, signing the Android release). It uses `deploy/docker-compose.prod.yml`.
@@ -152,17 +154,17 @@ The backup format and its tests live in `packages/shared/src/backup/`.
 
 ## Milestones
 
-| #   | Milestone                                                                 |
-| --- | ------------------------------------------------------------------------- |
-| M0  | Assumptions & design (architecture, Prisma schema, API spec, wireframes)  |
-| M1  | Foundations (auth, Prisma, Swagger, PWA shell, INR utils)                 |
-| M2  | Finance engine in `packages/shared` + golden tests                        |
-| M3  | Core tracking (transactions, categories, recurring, offline sync)         |
-| M4  | Loans, planner, dashboard, seed data                                      |
-| M5  | Reminders & web push                                                      |
-| M6  | Automatic SMS capture (Flutter + `/ingest/sms`)                           |
-| M7  | Import/export & privacy (export, backup, lock done; ICICI import pending) |
-| M8  | Hardening, CI APK build, deployment                                       |
+| #   | Milestone                                                                           |
+| --- | ----------------------------------------------------------------------------------- |
+| M0  | Assumptions & design (architecture, Prisma schema, API spec, wireframes)            |
+| M1  | Foundations (auth, Prisma, Swagger, PWA shell, INR utils)                           |
+| M2  | Finance engine in `packages/shared` + golden tests                                  |
+| M3  | Core tracking (transactions, categories, recurring, offline sync)                   |
+| M4  | Loans, planner, dashboard, seed data                                                |
+| M5  | Reminders & web push                                                                |
+| M6  | Automatic SMS capture (Flutter + `/ingest/sms`)                                     |
+| M7  | Import/export & privacy (export, backup, lock, CSV import done; ICICI .xls pending) |
+| M8  | Hardening, CI APK build, deployment                                                 |
 
 ## Privacy
 

@@ -21,6 +21,7 @@ const SECTIONS = [
   { href: '/loans', label: 'Loans' },
   { href: '/goals', label: 'Goals and money coming' },
   { href: '/reports', label: 'Reports' },
+  { href: '/import', label: 'Import statement' },
 ];
 
 const ACCOUNT_TYPES = [

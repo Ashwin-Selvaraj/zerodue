@@ -123,6 +123,9 @@ export interface NewTransaction {
   note?: string | null;
   tags?: string[];
   source?: TransactionDto['source'];
+  status?: TransactionDto['status'];
+  vpa?: string | null;
+  upiRef?: string | null;
   loanId?: string | null;
   receivableId?: string | null;
   goalContributionId?: string | null;
