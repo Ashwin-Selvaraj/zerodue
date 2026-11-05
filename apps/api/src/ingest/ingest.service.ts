@@ -290,6 +290,7 @@ export class IngestService {
         : `${amount} paid${who ? ` to ${who}` : ''}`;
     return {
       transactionId,
+      type: txn.type === 'INCOME' ? 'INCOME' : 'EXPENSE',
       deduped,
       status: txn.status,
       categoryId: txn.categoryId,

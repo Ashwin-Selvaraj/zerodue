@@ -154,6 +154,7 @@ describe('phone pairing and SMS capture (e2e)', () => {
       const phone = await pairPhone();
       const result = await send(phone, event());
       expect(result).toMatchObject({
+        type: 'EXPENSE',
         deduped: false,
         status: 'PENDING_CATEGORY',
         categoryId: null,
@@ -184,6 +185,7 @@ describe('phone pairing and SMS capture (e2e)', () => {
         event({ direction: 'CREDIT', amountPaise: 500_000, merchant: 'A FRIEND' }),
       );
       expect(result.title).toBe('₹5,000 received from A FRIEND');
+      expect(result.type).toBe('INCOME');
       expect((await transactions())[0]).toMatchObject({ type: 'INCOME', amountPaise: 500_000 });
     });
 

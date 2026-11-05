@@ -40,6 +40,8 @@ export const quickPickSchema = z.object({ id: uuidSchema, name: z.string() });
 
 export const ingestResultSchema = z.object({
   transactionId: uuidSchema,
+  /** Money out or money in, so the notification knows whether to offer expense categories. */
+  type: z.enum(['EXPENSE', 'INCOME']),
   /** The payment was already known (a retry, or the same payment seen in another message). */
   deduped: z.boolean(),
   status: z.enum(['PENDING_CATEGORY', 'POSTED', 'IGNORED']),
