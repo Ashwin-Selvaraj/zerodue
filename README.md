@@ -111,7 +111,7 @@ Then open the **built** app over HTTPS (or `localhost`), go to **More → Notifi
 
 The API side is ready: **More → Phone capture → Pair a phone** shows a QR and an 8-character code (valid 5 minutes). The phone trades it for a device token that can only send payment messages, categorise them and read the inbox, so a lost phone cannot read your history. Remove a phone from the same card and its token stops working at once.
 
-Each message becomes a transaction waiting in **Inbox**; the phone's notification (or the Inbox) gives it a category in one tap, and "always use this for this merchant" remembers it. The same payment often arrives twice (the bank's message and the UPI app's): a shared UPI reference joins them, otherwise the same direction, amount and account within 10 minutes does, unless both are the same kind of message. **Test a message** on the same card shows exactly how a pasted message is read.
+Each message becomes a transaction waiting in **Inbox**; the phone's notification (or the Inbox) gives it a category in one tap, and "always use this for this merchant" remembers it. The same payment often arrives twice (the bank's message and the UPI app's): a shared UPI reference joins them, otherwise the same direction, amount and account within 10 minutes does, unless both are the same kind of message. **Test a message** on the same card shows exactly how a pasted message is read. On the phone, the inbox shows your quick-pick categories as buttons and **More…** lists every other category.
 
 The message reader lives in `packages/shared/src/sms/parser.ts`; `fixtures.json` beside it is the list of messages and expected results that the Android app's Dart copy must also pass. The example messages are modelled on typical bank formats, not copied from real ones: paste a few of yours into **Test a message** and add any that read wrong as fixtures.
 
@@ -138,7 +138,7 @@ The backup format and its tests live in `packages/shared/src/backup/`.
 
 **Web** — set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, then `pnpm --filter @zerodue/web build && pnpm --filter @zerodue/web start`, or deploy to any Node/Next host. The PWA requires HTTPS.
 
-**Mobile** — personal use, **sideloaded APK**: `flutter build apk --release` (the server address is typed in the app when pairing). Release builds only talk to HTTPS servers; debug builds also allow plain http for a server on your own network. A signed-build guide arrives in M8. Google Play restricts `READ_SMS`/`RECEIVE_SMS`, so Play Store distribution is out of scope.
+**Mobile** — personal use, **sideloaded APK**: `flutter build apk --release` (pair by scanning the QR code shown in the web app, or type the server address and code). Release builds only talk to HTTPS servers; debug builds also allow plain http for a server on your own network. Signing is described in [deploy/README.md](deploy/README.md). Google Play restricts `READ_SMS`/`RECEIVE_SMS`, so Play Store distribution is out of scope.
 
 ## Conventions
 

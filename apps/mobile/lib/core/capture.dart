@@ -260,6 +260,9 @@ class CaptureService {
   Future<List<Map<String, Object?>>> inbox() async =>
       await (await _api())?.uncategorised() ?? [];
 
+  Future<List<QuickPick>> expenseCategories() async =>
+      await (await _api())?.expenseCategories() ?? [];
+
   Future<void> categorise(String transactionId, String categoryId,
       {bool createRule = false}) async {
     await (await _api())

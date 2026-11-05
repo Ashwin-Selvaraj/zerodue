@@ -128,6 +128,17 @@ class AppController extends ChangeNotifier {
     }
   }
 
+  /// All categories, for the "More…" choice; the quick picks alone are on the buttons.
+  Future<List<QuickPick>> expenseCategories() async {
+    try {
+      return await capture.expenseCategories();
+    } on OfflineException {
+      throw const InboxUnavailable('You are offline.');
+    } on ApiException catch (e) {
+      throw InboxUnavailable(e.message);
+    }
+  }
+
   /// Returns a message to show when it did not simply work, or null.
   Future<String?> categorise(String transactionId, String categoryId,
       {bool createRule = false}) async {

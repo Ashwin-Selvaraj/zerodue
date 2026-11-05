@@ -263,6 +263,42 @@ void main() {
       expect(controller.paired, isTrue);
     });
 
+    testWidgets('scanning the QR code fills in the address and code and pairs',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: PairScreen(
+          controller: controller,
+          scan: (_) async =>
+              '{"apiUrl":"https://zerodue.example","code":"AB12CD34"}',
+        ),
+      ));
+      await tester.tap(find.text('Scan QR code'));
+      await tester.pumpAndSettle();
+      final pair = server.requests.firstWhere((r) => r.path == '/devices/pair');
+      expect(pair.body?['code'], 'AB12CD34');
+      expect(controller.paired, isTrue);
+    });
+
+    testWidgets(
+        'a QR code that is not ours is refused, and cancelling does nothing',
+        (tester) async {
+      var answer = 'https://example.com/menu';
+      String? scanned() => answer.isEmpty ? null : answer;
+      await tester.pumpWidget(MaterialApp(
+        home: PairScreen(controller: controller, scan: (_) async => scanned()),
+      ));
+      await tester.tap(find.text('Scan QR code'));
+      await tester.pumpAndSettle();
+      expect(find.text('That is not a ZeroDue pairing code.'), findsOneWidget);
+      expect(controller.paired, isFalse);
+
+      answer = '';
+      server.requests.clear();
+      await tester.tap(find.text('Scan QR code'));
+      await tester.pumpAndSettle();
+      expect(server.requests, isEmpty);
+    });
+
     testWidgets(
         'the captures tab lists what was read, what is waiting, and the setup steps',
         (tester) async {
@@ -338,6 +374,59 @@ void main() {
       expect(
           server.requests.any((r) => r.path == '/transactions/t1/categorise'),
           isTrue);
+    });
+
+    testWidgets('More… offers every category and files the payment under it',
+        (tester) async {
+      await pairDirectly();
+      server.respond = (r, b) => r.url.path == '/categories/for-expenses'
+          ? json(200, {
+              'items': [
+                {'id': 'fuel-id', 'name': 'Fuel', 'parentId': null},
+                {'id': 'gym-id', 'name': 'Gym', 'parentId': null},
+              ],
+            })
+          : standard(r, b);
+      await tester.runAsync(controller.load);
+      await tester.pumpWidget(homeApp());
+      await tester.tap(find.text('Inbox'));
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ActionChip, 'More…'));
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      expect(find.text('Gym'), findsOneWidget);
+
+      server.requests.clear();
+      await tester.tap(find.text('Gym'));
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      final sent = server.requests
+          .firstWhere((r) => r.path == '/transactions/t1/categorise');
+      expect(sent.body?['categoryId'], 'gym-id');
+    });
+
+    testWidgets('More… says so when the categories cannot be loaded',
+        (tester) async {
+      await pairDirectly();
+      server.respond = (r, b) => r.url.path == '/categories/for-expenses'
+          ? throw http.ClientException('down')
+          : standard(r, b);
+      await tester.runAsync(controller.load);
+      await tester.pumpWidget(homeApp());
+      await tester.tap(find.text('Inbox'));
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ActionChip, 'More…'));
+      await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 50)));
+      await tester.pumpAndSettle();
+      expect(find.text('You are offline.'), findsOneWidget);
     });
 
     testWidgets('the inbox says so when offline', (tester) async {

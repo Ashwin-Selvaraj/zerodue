@@ -122,6 +122,14 @@ class ApiClient {
     await _send('POST', '/transactions/$transactionId/ignore');
   }
 
+  /// Every category a payment can be filed under.
+  Future<List<QuickPick>> expenseCategories() async {
+    final json = await _send('GET', '/categories/for-expenses');
+    return (json['items']! as List<Object?>)
+        .map((c) => QuickPick.fromJson((c! as Map).cast<String, Object?>()))
+        .toList();
+  }
+
   /// Captured payments still waiting for a category.
   Future<List<Map<String, Object?>>> uncategorised() async {
     final json = await _send('GET', '/transactions/uncategorised');

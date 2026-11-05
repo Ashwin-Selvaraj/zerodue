@@ -122,11 +122,23 @@ describe('phone pairing and SMS capture (e2e)', () => {
       await http().get('/ingest/config').set(phone.auth).expect(200);
     });
 
+    it('lists every category a payment can go under, without income ones', async () => {
+      const phone = await pairPhone();
+      const all = (await http().get('/categories').set(user.auth).expect(200)).body as Json[];
+      const res = await http().get('/categories/for-expenses').set(phone.auth).expect(200);
+      const names = res.body.items.map((c: Json) => c.name);
+      expect(names).toEqual(expect.arrayContaining(['Fuel', 'Food & going out', 'Misc']));
+      expect(names).not.toContain('Salary');
+      expect(res.body.items).toHaveLength(all.filter((c) => c.kind !== 'INCOME').length);
+      expect(Object.keys(res.body.items[0]).sort()).toEqual(['id', 'name', 'parentId']);
+    });
+
     it('limits a phone to capture, categorising and the inbox', async () => {
       const phone = await pairPhone();
       for (const path of [
         '/ingest/config',
         '/categories/quick-picks',
+        '/categories/for-expenses',
         '/transactions/uncategorised',
       ]) {
         await http().get(path).set(phone.auth).expect(200);

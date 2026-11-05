@@ -101,6 +101,24 @@ export class CategoriesController {
     return all.filter((category) => category.quickPick);
   }
 
+  /** Every category a payment can be filed under, for the phone's "more categories" list. */
+  @DeviceAccess()
+  @Get('for-expenses')
+  async forExpenses(@CurrentUser() user: AuthUser) {
+    const all = (await this.records.list(user.id, 'category')) as {
+      id: string;
+      name: string;
+      kind: string;
+      parentId: string | null;
+      sortOrder: number;
+    }[];
+    const items = all
+      .filter((category) => category.kind !== 'INCOME')
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+      .map(({ id, name, parentId }) => ({ id, name, parentId }));
+    return { items };
+  }
+
   @Post()
   @ApiCreatedResponse({ type: CategoryDto })
   create(

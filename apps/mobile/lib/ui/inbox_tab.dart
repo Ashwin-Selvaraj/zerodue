@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_controller.dart';
 import '../core/format.dart';
+import '../core/models.dart';
 
 /// Payments waiting for a category, with the same one-tap buttons as the notification.
 class InboxTab extends StatefulWidget {
@@ -25,9 +26,40 @@ class _InboxTabState extends State<InboxTab> {
     final problem = await action;
     if (!mounted) return;
     if (problem != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(problem)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(problem)));
     }
     _reload();
+  }
+
+  /// Offers every category, for payments the quick-pick buttons do not fit.
+  Future<void> _more(String transactionId) async {
+    final List<QuickPick> all;
+    try {
+      all = await widget.controller.expenseCategories();
+    } on InboxUnavailable catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.message)));
+      return;
+    }
+    if (!mounted) return;
+    final chosen = await showModalBottomSheet<QuickPick>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final c in all)
+              ListTile(
+                  title: Text(c.name), onTap: () => Navigator.pop(context, c)),
+          ],
+        ),
+      ),
+    );
+    if (chosen == null || !mounted) return;
+    await _run(widget.controller.categorise(transactionId, chosen.id));
   }
 
   @override
@@ -85,6 +117,10 @@ class _InboxTabState extends State<InboxTab> {
                                   onPressed: () => _run(widget.controller
                                       .categorise(t['id']! as String, q.id)),
                                 ),
+                              ActionChip(
+                                label: const Text('More…'),
+                                onPressed: () => _more(t['id']! as String),
+                              ),
                             ],
                           ),
                         TextButton(
@@ -96,7 +132,6 @@ class _InboxTabState extends State<InboxTab> {
                     ),
                   ),
                 ),
-              const Text('More categories are in the web app.'),
             ],
           );
         },

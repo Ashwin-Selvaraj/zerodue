@@ -75,7 +75,7 @@ Every push builds an APK in GitHub Actions (**Actions → the latest run → Art
 - `zerodue-debug-apk` is for trying things. It also allows plain `http`, so it can talk to a server on your home network.
 - `zerodue-release-apk` appears once you add the signing secrets below. It only talks to `https`, so use it with the deployment above.
 
-Install either by copying the file to the phone and allowing installs from that source. In the app: **More → Phone capture** on the web gives a code; type the API address (`https://api.example.com`) and the code into the phone.
+Install either by copying the file to the phone and allowing installs from that source. In the app: **More → Phone capture → Pair a phone** on the web shows a QR code; tap **Scan QR code** on the phone (it asks for the camera). You can also type the API address (`https://api.example.com`) and the code.
 
 ### Signing the release APK with your own key
 
