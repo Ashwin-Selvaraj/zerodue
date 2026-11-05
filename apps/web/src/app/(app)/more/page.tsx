@@ -3,6 +3,7 @@
 import { formatDateTime, formatINR } from '@zerodue/shared';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
+import { NotificationsCard } from '@/components/notifications-card';
 import { ui } from '@/components/ui';
 import { typedToPaise } from '@/lib/amount';
 import { useAuth } from '@/lib/auth-context';
@@ -81,6 +82,8 @@ export default function MorePage() {
           </Link>
         ))}
       </nav>
+
+      <NotificationsCard />
 
       <section aria-label="Sync" className={ui.card}>
         <h2 className="mb-1 font-medium">Sync</h2>

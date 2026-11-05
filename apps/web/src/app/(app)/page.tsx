@@ -11,6 +11,7 @@ import {
   monthKey,
 } from '@zerodue/shared';
 import Link from 'next/link';
+import { RemindersCard } from '@/components/reminders-card';
 import { ui } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
 import { monthLabel } from '@/lib/format';
@@ -56,6 +57,8 @@ export default function HomePage() {
           {a.text} <span className="underline">Look</span>
         </Link>
       ))}
+
+      <RemindersCard />
 
       <section aria-label="This month" className="grid grid-cols-2 gap-3">
         <div className={ui.card}>

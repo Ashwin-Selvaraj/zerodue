@@ -170,13 +170,23 @@ const PROFILE_KEY = 'profile';
 /**
  * Makes sure what is stored here belongs to this user. If someone else's data is found (an account
  * was deleted or switched without signing out), it is wiped before the new user's data is fetched.
+ * Data with no recorded owner is also wiped when nothing is waiting to be sent, since it can all be
+ * fetched again; if changes are waiting it is kept, so nothing the user typed is lost.
  * Returns true when data was cleared.
  */
 export async function claimLocalData(userId: string): Promise<boolean> {
   const owner =
     (await readMeta<string>(OWNER_KEY)) ?? (await readMeta<{ id?: string }>(PROFILE_KEY))?.id;
-  const foreign = owner !== undefined && owner !== userId;
-  if (foreign) await clearLocalData();
+  let clear = owner !== undefined && owner !== userId;
+  if (owner === undefined) {
+    try {
+      const db = getDb();
+      clear = (await db.outbox.count()) === 0 && (await db.accounts.count()) > 0;
+    } catch {
+      clear = false; // storage unavailable: nothing to protect or clear
+    }
+  }
+  if (clear) await clearLocalData();
   await writeMeta(OWNER_KEY, userId);
-  return foreign;
+  return clear;
 }

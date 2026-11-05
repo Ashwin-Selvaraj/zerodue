@@ -48,4 +48,53 @@ describe('claimLocalData', () => {
     expect(await claimLocalData('user-a')).toBe(false);
     expect(await readMeta('dataOwner')).toBe('user-a');
   });
+
+  it('wipes data with no recorded owner when nothing is waiting to be sent', async () => {
+    const now = '2026-11-05T10:00:00+05:30';
+    await getDb().accounts.put({
+      id: 'a',
+      name: 'Bank',
+      type: 'BANK',
+      balancePaise: 0,
+      archived: false,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      editedAt: now,
+      deletedAt: null,
+      lastDeviceId: null,
+    });
+    expect(await claimLocalData('user-a')).toBe(true);
+    expect(await getDb().accounts.count()).toBe(0);
+  });
+
+  it('keeps ownerless data when changes are still waiting to be sent', async () => {
+    const now = '2026-11-05T10:00:00+05:30';
+    await getDb().accounts.put({
+      id: 'a',
+      name: 'Bank',
+      type: 'BANK',
+      balancePaise: 0,
+      archived: false,
+      version: 1,
+      createdAt: now,
+      updatedAt: now,
+      editedAt: now,
+      deletedAt: null,
+      lastDeviceId: null,
+    });
+    await getDb().outbox.add({
+      entity: 'account',
+      entityId: 'a',
+      op: 'upsert',
+      editedAt: now,
+      baseVersion: 0,
+      createdAt: 1,
+      rev: 1,
+      attempts: 0,
+    });
+    expect(await claimLocalData('user-a')).toBe(false);
+    expect(await getDb().accounts.count()).toBe(1);
+    expect(await readMeta('dataOwner')).toBe('user-a');
+  });
 });

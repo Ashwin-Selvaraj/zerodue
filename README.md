@@ -95,6 +95,18 @@ SEED_PASSWORD='your-password' pnpm --filter @zerodue/api seed -- --profile seed/
 
 The user is created if needed, and everything goes through the same sync endpoint the app uses, so the app picks it up on its next sync. If the account already has loans or bills the seed stops without changing anything; pass `--force` to overwrite them.
 
+## Reminders and notifications
+
+The API checks every minute for bills that are due soon and creates a reminder for each lead time you chose on the bill (for example 3 days and 1 day before), plus one the day after if it is still unpaid. Reminders show on Home whether or not push is set up. They go out at 9 am India time.
+
+To also get them as phone or desktop notifications:
+
+```bash
+npx web-push generate-vapid-keys   # once; put the two keys in .env as VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY
+```
+
+Then open the **built** app over HTTPS (or `localhost`), go to **More → Notifications → Turn on notifications**. Notifications need the service worker, which only runs in production builds, so they will not work against `pnpm dev`. On an iPhone the app must first be added to the home screen. The notification's **Mark paid** and **Remind me later** buttons work without opening the app (the worker signs itself in with your session cookie, so keep the API and web on subdomains of one domain). Set `SCHEDULER=false` on any second API instance so jobs don't run twice.
+
 ## Deploy
 
 **Whole stack with Docker Compose** — put real `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in `.env`, then `docker compose up --build`. This starts Postgres, the API (applies migrations on start) and the web app. Behind HTTPS set `COOKIE_SECURE=true`, `WEB_ORIGIN` to the web origin, and rebuild web with `NEXT_PUBLIC_API_URL` pointing at the API. Put the web app and API on subdomains of one domain (`app.example.com`, `api.example.com`) so the refresh cookie stays same-site. The Dockerfiles are not yet exercised locally (CI builds them).
