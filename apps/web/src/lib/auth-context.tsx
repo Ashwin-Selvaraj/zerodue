@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { api, NetworkError, refreshSession } from './api';
+import { api, ApiError, NetworkError, refreshSession } from './api';
 import { claimLocalData, clearLocalData, readMeta, writeMeta } from './db';
 
 type Status = 'loading' | 'authenticated' | 'offline' | 'unauthenticated';
@@ -50,8 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         if (cancelled) return;
-        const cached =
-          error instanceof NetworkError ? await readMeta<UserDto>(PROFILE_KEY) : undefined;
+        // Offline, rate-limited or a server error is not the same as signed out: stay usable from the cache.
+        const recoverable =
+          error instanceof NetworkError || (error instanceof ApiError && error.status !== 401);
+        const cached = recoverable ? await readMeta<UserDto>(PROFILE_KEY) : undefined;
         if (cancelled) return;
         setUser(cached ?? null);
         setStatus(cached ? 'offline' : 'unauthenticated');

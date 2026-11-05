@@ -37,6 +37,7 @@ export function useTransactions(
       .toArray();
     const needle = query.trim().toLowerCase();
     return rows.filter((t) => {
+      if (t.status === 'IGNORED') return false;
       if (categoryId && t.categoryId !== categoryId) return false;
       if (!needle) return true;
       return [t.merchant, t.note, t.vpa].some((field) => field?.toLowerCase().includes(needle));
@@ -222,4 +223,14 @@ export function useTransactionRange(endMonth: string, count: number): Transactio
     const end = new Date(`${addMonths(endMonth, 1)}T00:00:00+05:30`).toISOString();
     return getDb().transactions.where('occurredAt').between(start, end, true, false).toArray();
   }, [endMonth, count]);
+}
+
+/** Captured payments still waiting for a category, newest first. */
+export function usePendingTransactions(): TransactionDto[] | undefined {
+  return useLiveQuery(async () => {
+    const rows = await getDb()
+      .transactions.filter((t) => t.status === 'PENDING_CATEGORY')
+      .toArray();
+    return rows.sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
+  }, []);
 }

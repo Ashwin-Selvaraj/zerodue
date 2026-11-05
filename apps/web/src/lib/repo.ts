@@ -290,3 +290,39 @@ export async function skipOccurrence(id: string): Promise<void> {
   const occurrence = await getDb().occurrences.get(id);
   if (occurrence) await saveRecord('recurringOccurrence', { ...occurrence, status: 'SKIPPED' });
 }
+
+// ───────────────────────── inbox (captured payments waiting for a category) ─────────────────────────
+
+/** Sets the category on a captured payment, and optionally remembers the merchant for next time. */
+export async function categorisePending(
+  id: string,
+  categoryId: string,
+  rememberMerchant: boolean,
+): Promise<void> {
+  const db = getDb();
+  const txn = await db.transactions.get(id);
+  if (!txn) throw new Error('Transaction not found');
+  await updateTransaction(id, { categoryId });
+  const pattern = txn.merchant ?? undefined;
+  if (!rememberMerchant || !pattern) return;
+  const rules = await db.categoryRules.toArray();
+  const exists = rules.some(
+    (r) => r.matchType === 'MERCHANT_EQUALS' && r.pattern.toLowerCase() === pattern.toLowerCase(),
+  );
+  if (!exists) {
+    await saveRecord('categoryRule', {
+      matchType: 'MERCHANT_EQUALS',
+      pattern,
+      categoryId,
+      priority: 100,
+      enabled: true,
+    });
+  }
+}
+
+/** "This was not a real payment": kept, but out of every list and total. */
+export async function ignoreTransaction(id: string): Promise<void> {
+  const txn = await getDb().transactions.get(id);
+  if (!txn) throw new Error('Transaction not found');
+  await saveRecord('transaction', { ...txn, status: 'IGNORED' });
+}

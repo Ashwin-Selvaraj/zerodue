@@ -3,6 +3,7 @@
 import { formatDateTime, formatINR } from '@zerodue/shared';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
+import { PhoneCard } from '@/components/phone-card';
 import { NotificationsCard } from '@/components/notifications-card';
 import { ui } from '@/components/ui';
 import { typedToPaise } from '@/lib/amount';
@@ -13,6 +14,7 @@ import { deleteRecord, saveRecord } from '@/lib/repo';
 import { syncNow } from '@/lib/sync';
 
 const SECTIONS = [
+  { href: '/inbox', label: 'Inbox' },
   { href: '/bills', label: 'Bills' },
   { href: '/loans', label: 'Loans' },
   { href: '/goals', label: 'Goals and money coming' },
@@ -84,6 +86,8 @@ export default function MorePage() {
       </nav>
 
       <NotificationsCard />
+
+      <PhoneCard />
 
       <section aria-label="Sync" className={ui.card}>
         <h2 className="mb-1 font-medium">Sync</h2>

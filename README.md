@@ -107,6 +107,14 @@ npx web-push generate-vapid-keys   # once; put the two keys in .env as VAPID_PUB
 
 Then open the **built** app over HTTPS (or `localhost`), go to **More → Notifications → Turn on notifications**. Notifications need the service worker, which only runs in production builds, so they will not work against `pnpm dev`. On an iPhone the app must first be added to the home screen. The notification's **Mark paid** and **Remind me later** buttons work without opening the app (the worker signs itself in with your session cookie, so keep the API and web on subdomains of one domain). Set `SCHEDULER=false` on any second API instance so jobs don't run twice.
 
+## Capturing payments from messages (Android)
+
+The API side is ready: **More → Phone capture → Pair a phone** shows a QR and an 8-character code (valid 5 minutes). The phone trades it for a device token that can only send payment messages, categorise them and read the inbox, so a lost phone cannot read your history. Remove a phone from the same card and its token stops working at once.
+
+Each message becomes a transaction waiting in **Inbox**; the phone's notification (or the Inbox) gives it a category in one tap, and "always use this for this merchant" remembers it. The same payment often arrives twice (the bank's message and the UPI app's): a shared UPI reference joins them, otherwise the same direction, amount and account within 10 minutes does, unless both are the same kind of message. **Test a message** on the same card shows exactly how a pasted message is read.
+
+The message reader lives in `packages/shared/src/sms/parser.ts`; `fixtures.json` beside it is the list of messages and expected results that the Android app's Dart copy must also pass. The example messages are modelled on typical bank formats, not copied from real ones: paste a few of yours into **Test a message** and add any that read wrong as fixtures.
+
 ## Deploy
 
 **Whole stack with Docker Compose** — put real `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in `.env`, then `docker compose up --build`. This starts Postgres, the API (applies migrations on start) and the web app. Behind HTTPS set `COOKIE_SECURE=true`, `WEB_ORIGIN` to the web origin, and rebuild web with `NEXT_PUBLIC_API_URL` pointing at the API. Put the web app and API on subdomains of one domain (`app.example.com`, `api.example.com`) so the refresh cookie stays same-site. The Dockerfiles are not yet exercised locally (CI builds them).

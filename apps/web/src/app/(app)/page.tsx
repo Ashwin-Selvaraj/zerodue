@@ -91,7 +91,7 @@ export default function HomePage() {
       )}
 
       {uncategorised > 0 && (
-        <Link href="/transactions" className={ui.card + ' flex items-center justify-between'}>
+        <Link href="/inbox" className={ui.card + ' flex items-center justify-between'}>
           <span>
             {uncategorised} uncategorised transaction{uncategorised > 1 ? 's' : ''}
           </span>
