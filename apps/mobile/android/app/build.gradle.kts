@@ -6,7 +6,8 @@ plugins {
 
 android {
     namespace = "com.ashwin.zerodue"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler_android needs 37; compiling against a newer SDK does not change what runs
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
