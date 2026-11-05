@@ -1,6 +1,6 @@
 import { assertPaise } from './guards';
 
-export interface GoalContributionInput {
+export interface GoalContributionLine {
   contributor: string;
   amountPaise: number;
   status: 'PLEDGED' | 'RECEIVED';
@@ -22,7 +22,7 @@ export interface GoalProgress {
 /** Funding position of a purchase plan with several contributors. The gap is always computed. */
 export function goalProgress(
   targetPaise: number,
-  contributions: GoalContributionInput[],
+  contributions: GoalContributionLine[],
 ): GoalProgress {
   assertPaise(targetPaise, 'targetPaise');
   let receivedPaise = 0;

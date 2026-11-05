@@ -1,5 +1,29 @@
 import {
   accountInputSchema,
+  allocationRuleInputSchema,
+  allocationRulePatchSchema,
+  allocationRuleSchema,
+  goalContributionInputSchema,
+  goalContributionPatchSchema,
+  goalContributionSchema,
+  goalInputSchema,
+  goalPatchSchema,
+  goalSchema,
+  loanInputSchema,
+  loanLedgerInputSchema,
+  loanLedgerPatchSchema,
+  loanLedgerSchema,
+  loanPatchSchema,
+  loanSchema,
+  plannedPaymentInputSchema,
+  plannedPaymentPatchSchema,
+  plannedPaymentSchema,
+  receivableInputSchema,
+  receivablePatchSchema,
+  receivableSchema,
+  scenarioInputSchema,
+  scenarioPatchSchema,
+  scenarioSchema,
   accountPatchSchema,
   accountSchema,
   amountPeriodInputSchema,
@@ -64,3 +88,28 @@ export class SyncPushDto extends createZodDto(syncPushSchema) {}
 export class SyncPushResponseDto extends createZodDto(syncPushResponseSchema) {}
 export class SyncPullQueryDto extends createZodDto(syncPullQuerySchema) {}
 export class SyncPullResponseDto extends createZodDto(syncPullResponseSchema) {}
+
+export class LoanInputDto extends createZodDto(loanInputSchema) {}
+export class LoanPatchDto extends createZodDto(loanPatchSchema) {}
+export class LoanDto extends createZodDto(loanSchema) {}
+export class LoanLedgerInputDto extends createZodDto(loanLedgerInputSchema) {}
+export class LoanLedgerPatchDto extends createZodDto(loanLedgerPatchSchema) {}
+export class LoanLedgerDto extends createZodDto(loanLedgerSchema) {}
+export class PlannedPaymentInputDto extends createZodDto(plannedPaymentInputSchema) {}
+export class PlannedPaymentPatchDto extends createZodDto(plannedPaymentPatchSchema) {}
+export class PlannedPaymentDto extends createZodDto(plannedPaymentSchema) {}
+export class ScenarioInputDto extends createZodDto(scenarioInputSchema) {}
+export class ScenarioPatchDto extends createZodDto(scenarioPatchSchema) {}
+export class ScenarioDto extends createZodDto(scenarioSchema) {}
+export class ReceivableInputDto extends createZodDto(receivableInputSchema) {}
+export class ReceivablePatchDto extends createZodDto(receivablePatchSchema) {}
+export class ReceivableDto extends createZodDto(receivableSchema) {}
+export class GoalInputDto extends createZodDto(goalInputSchema) {}
+export class GoalPatchDto extends createZodDto(goalPatchSchema) {}
+export class GoalDto extends createZodDto(goalSchema) {}
+export class GoalContributionInputDto extends createZodDto(goalContributionInputSchema) {}
+export class GoalContributionPatchDto extends createZodDto(goalContributionPatchSchema) {}
+export class GoalContributionDto extends createZodDto(goalContributionSchema) {}
+export class AllocationRuleInputDto extends createZodDto(allocationRuleInputSchema) {}
+export class AllocationRulePatchDto extends createZodDto(allocationRulePatchSchema) {}
+export class AllocationRuleDto extends createZodDto(allocationRuleSchema) {}

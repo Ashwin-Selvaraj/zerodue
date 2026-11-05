@@ -144,6 +144,10 @@ const transactionFields = z.object({
     .regex(/^\d{4}$/)
     .nullish(),
   source: z.enum(transactionSources).default('MANUAL'),
+  /** Set when the transaction is a loan payment, a receivable coming in, or a goal contribution. */
+  loanId: uuidSchema.nullish(),
+  receivableId: uuidSchema.nullish(),
+  goalContributionId: uuidSchema.nullish(),
 });
 
 function checkTransfer(
@@ -328,6 +332,14 @@ export const syncEntities = [
   'recurringItem',
   'recurringAmountPeriod',
   'recurringOccurrence',
+  'loan',
+  'loanLedgerEntry',
+  'loanPlannedPayment',
+  'scenario',
+  'receivable',
+  'goal',
+  'goalContribution',
+  'allocationRule',
 ] as const;
 export type SyncEntity = (typeof syncEntities)[number];
 export const syncEntitySchema = z.enum(syncEntities);

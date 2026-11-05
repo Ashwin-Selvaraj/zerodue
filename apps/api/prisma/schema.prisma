@@ -185,6 +185,9 @@ model User {
   occurrences       RecurringOccurrence[]
   amountPeriods     RecurringAmountPeriod[]
   loans             Loan[]
+  loanLedger        LoanLedgerEntry[]
+  loanPlanned       LoanPlannedPayment[]
+  goalContributions GoalContribution[]
   receivables       Receivable[]
   goals             Goal[]
   allocationRules   AllocationRule[]
@@ -551,6 +554,7 @@ model Loan {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -569,6 +573,7 @@ model Loan {
 // Actual posted history: interest postings and payments. Projections are never stored.
 model LoanLedgerEntry {
   id                String         @id @default(uuid()) @db.Uuid
+  userId            String         @db.Uuid
   loanId            String         @db.Uuid
   kind              LoanLedgerKind
   month             DateTime       @db.Date // first-of-month the entry belongs to
@@ -582,19 +587,21 @@ model LoanLedgerEntry {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   loan        Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
   transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
-  // one automatic INTEREST row per loan per month
-  @@unique([loanId, month, kind, effectiveDate])
   @@index([loanId, effectiveDate])
+  @@index([userId, updatedAt, id])
 }
 
 // Manual per-month override of the "sweep" payment policy.
 model LoanPlannedPayment {
   id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid
   loanId      String   @db.Uuid
   month       DateTime @db.Date
   amountPaise Int
@@ -603,26 +610,34 @@ model LoanPlannedPayment {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
 
-  @@unique([loanId, month])
+  @@index([loanId, month])
+  @@index([userId, updatedAt, id])
 }
 
 model Scenario {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  loanId    String?  @db.Uuid
-  name      String
-  params    Json // extra payments, rate, monthly payment, target date
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  loanId       String?   @db.Uuid
+  name         String
+  params       Json // extra payments, rate, monthly payment, target date
+  createdAt    DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
+  deletedAt    DateTime? @db.Timestamptz(6)
+  version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6)
+  lastDeviceId String?   @db.Uuid
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   loan Loan? @relation(fields: [loanId], references: [id], onDelete: SetNull)
 
   @@index([userId])
+  @@index([userId, updatedAt, id])
 }
 
 // ───────────────────────────── Receivables, goals, allocation ─────────────────────────────
@@ -643,6 +658,7 @@ model Receivable {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -666,6 +682,7 @@ model Goal {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -678,6 +695,7 @@ model Goal {
 
 model GoalContribution {
   id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
   goalId      String             @db.Uuid
   contributor String // "Me", "Sibling", ...
   isSelf      Boolean            @default(false)
@@ -689,12 +707,15 @@ model GoalContribution {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   goal         Goal          @relation(fields: [goalId], references: [id], onDelete: Cascade)
   transactions Transaction[] @relation("ContributionTxn")
 
   @@index([goalId])
+  @@index([userId, updatedAt, id])
 }
 
 // Where a recurring income stream (e.g. family support) goes, over a date range or until a loan clears.
@@ -714,6 +735,7 @@ model AllocationRule {
   updatedAt    DateTime  @updatedAt @db.Timestamptz(6)
   deletedAt    DateTime? @db.Timestamptz(6)
   version      Int       @default(1)
+  editedAt     DateTime  @default(now()) @db.Timestamptz(6) // when the user made the edit (client clock); drives sync conflict resolution
   lastDeviceId String?   @db.Uuid
 
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)

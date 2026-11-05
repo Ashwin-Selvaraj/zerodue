@@ -140,7 +140,7 @@ describe('offline sync (e2e)', () => {
         .set(user.auth)
         .send({
           deviceId: PHONE,
-          ops: [{ entity: 'loan', op: 'upsert', id: randomUUID(), editedAt: at('09:00') }],
+          ops: [{ entity: 'widget', op: 'upsert', id: randomUUID(), editedAt: at('09:00') }],
         })
         .expect(400);
       const tooMany = Array.from({ length: 201 }, () =>

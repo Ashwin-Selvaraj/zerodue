@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PLANNING_CONTROLLERS } from './planning.controllers';
 import { RecurringController } from './recurring.controller';
 import { RecurringService } from './recurring.service';
 import {
@@ -22,6 +23,7 @@ import { TransactionsService } from './transactions.service';
     RecurringController,
     SyncController,
     AuditController,
+    ...PLANNING_CONTROLLERS,
   ],
   providers: [TransactionsService, RecurringService, SyncService],
 })
