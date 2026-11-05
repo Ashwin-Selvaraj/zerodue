@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, type ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell';
+import { LockGate } from '@/components/lock-gate';
 import { useAuth } from '@/lib/auth-context';
 import { startSyncing } from '@/lib/sync';
 
@@ -27,5 +28,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </main>
     );
   }
-  return <AppShell>{children}</AppShell>;
+  return (
+    <LockGate>
+      <AppShell>{children}</AppShell>
+    </LockGate>
+  );
 }

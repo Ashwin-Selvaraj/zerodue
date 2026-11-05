@@ -9,3 +9,4 @@ export * from './dto/records';
 export * from './categories';
 export * from './rules';
 export * from './sms/parser';
+export * from './backup';

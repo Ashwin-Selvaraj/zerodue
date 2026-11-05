@@ -114,6 +114,19 @@ Each message becomes a transaction waiting in **Inbox**; the phone's notificatio
 
 The message reader lives in `packages/shared/src/sms/parser.ts`; `fixtures.json` beside it is the list of messages and expected results that the Android app's Dart copy must also pass. The example messages are modelled on typical bank formats, not copied from real ones: paste a few of yours into **Test a message** and add any that read wrong as fixtures.
 
+## Export, backup and app lock
+
+**More → Your data** works from the copy on the device, so it works offline.
+
+- **CSV**: transactions for this or last month, this or last financial year (Apr–Mar), or everything. Amounts are plain rupees (`1299.50`), dates are IST, and text that a spreadsheet would run as a formula is defused. Payments you marked as not real are left out.
+- **Encrypted backup**: every record in one file, sealed with a passphrase (at least 10 characters) using PBKDF2-SHA256 (600,000 rounds) and AES-256-GCM. The passphrase cannot be recovered, so keep it somewhere safe.
+- **Restore**: choose a backup (or a plain export), see how many records are new, different or already there, then restore only what is missing or also put back the ones that differ. Restored records go through the normal save path, so they sync like anything you typed. Bill due dates are rebuilt from your bills rather than restored.
+- **Download all data**: the same records as readable JSON. It is not encrypted.
+
+**More → App lock** asks for a 4–12 digit PIN when the app opens, after it has been away or untouched for the time you pick, and on **Lock now**. After five wrong tries each further one waits longer (30 seconds, doubling, up to an hour). It keeps casual eyes out; it does not encrypt what is stored in the browser. If you forget the PIN, signing out resets it (and removes the local copy, which downloads again when you sign back in).
+
+The backup format and its tests live in `packages/shared/src/backup/`.
+
 ## Deploy
 
 **Whole stack with Docker Compose** — put real `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in `.env`, then `docker compose up --build`. This starts Postgres, the API (applies migrations on start) and the web app. Behind HTTPS set `COOKIE_SECURE=true`, `WEB_ORIGIN` to the web origin, and rebuild web with `NEXT_PUBLIC_API_URL` pointing at the API. Put the web app and API on subdomains of one domain (`app.example.com`, `api.example.com`) so the refresh cookie stays same-site. The Dockerfiles are not yet exercised locally (CI builds them).

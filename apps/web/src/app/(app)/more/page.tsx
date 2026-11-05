@@ -3,6 +3,8 @@
 import { formatDateTime, formatINR } from '@zerodue/shared';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
+import { DataCard } from '@/components/data-card';
+import { LockCard } from '@/components/lock-card';
 import { PhoneCard } from '@/components/phone-card';
 import { NotificationsCard } from '@/components/notifications-card';
 import { ui } from '@/components/ui';
@@ -238,6 +240,10 @@ export default function MorePage() {
           {error}
         </p>
       )}
+
+      <DataCard />
+
+      <LockCard />
 
       <section aria-label="Account" className={ui.card}>
         <p className={ui.muted}>Signed in as {user?.email}</p>
