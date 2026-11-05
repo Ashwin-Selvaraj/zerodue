@@ -123,6 +123,9 @@ export interface NewTransaction {
   note?: string | null;
   tags?: string[];
   source?: TransactionDto['source'];
+  loanId?: string | null;
+  receivableId?: string | null;
+  goalContributionId?: string | null;
 }
 
 /** Mirrors the server's rules so a transaction is categorised the same way offline as online. */

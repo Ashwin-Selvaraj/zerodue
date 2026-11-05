@@ -1,35 +1,47 @@
 'use client';
 
 import {
+  addMonths,
   APP_NAME,
   APP_TAGLINE,
   formatDate,
   formatINR,
+  goalProgress,
   isoDateIST,
   monthKey,
 } from '@zerodue/shared';
 import Link from 'next/link';
 import { ui } from '@/components/ui';
 import { useAuth } from '@/lib/auth-context';
-import { useOccurrences, useTransactions } from '@/lib/queries';
+import { monthLabel } from '@/lib/format';
+import { useGoals, useOccurrences, usePlan, useTransactions } from '@/lib/queries';
+import { monthTotals } from '@/lib/reports';
 
-/** Home: this month at a glance, from data on this device. (The full dashboard arrives in M4.) */
+/** Home: this month at a glance, the loan being paid down, the goal, and what needs attention. */
 export default function HomePage() {
   const { user } = useAuth();
   const month = monthKey(new Date());
   const transactions = useTransactions(month);
   const occurrences = useOccurrences();
+  const built = usePlan(12);
+  const goals = useGoals();
   const today = isoDateIST(new Date());
 
-  let income = 0;
-  let spent = 0;
-  let uncategorised = 0;
-  for (const t of transactions ?? []) {
-    if (t.type === 'INCOME') income += t.amountPaise;
-    if (t.type === 'EXPENSE') spent += t.amountPaise;
-    if (t.type !== 'TRANSFER' && !t.categoryId) uncategorised++;
-  }
+  const { incomePaise, spentPaise, uncategorised } = monthTotals(transactions ?? []);
   const upcoming = (occurrences ?? []).filter((o) => o.status === 'UPCOMING').slice(0, 4);
+  const thisMonth = built?.plan.months[0];
+  const loan = built?.sweepLoan;
+  const goal = goals?.find((g) => g.goal.status === 'ACTIVE');
+  const progress = goal && goalProgress(goal.goal.targetAmountPaise, goal.contributions);
+  const attention = [
+    ...(built?.plan.pendingDecisions.some((d) => d.month <= addMonths(month, 2))
+      ? [{ text: 'Money is coming soon with no plan for it.', href: '/plan' }]
+      : []),
+    ...(built?.risks.length
+      ? [{ text: 'A bill falls due before the money to pay it.', href: '/plan' }]
+      : []),
+    ...(built?.warnings.map((text) => ({ text, href: '/loans' })) ?? []),
+  ];
 
   return (
     <main className={ui.page}>
@@ -39,22 +51,41 @@ export default function HomePage() {
         {user && <p className={ui.muted}>Hello, {user.name ?? user.email}</p>}
       </header>
 
+      {attention.map((a) => (
+        <Link key={a.text} href={a.href} className={ui.error}>
+          {a.text} <span className="underline">Look</span>
+        </Link>
+      ))}
+
       <section aria-label="This month" className="grid grid-cols-2 gap-3">
         <div className={ui.card}>
           <p className={ui.muted}>Income</p>
-          <p className="text-lg font-semibold">{formatINR(income)}</p>
+          <p className="text-lg font-semibold">{formatINR(incomePaise)}</p>
         </div>
         <div className={ui.card}>
           <p className={ui.muted}>Spent</p>
-          <p className="text-lg font-semibold">{formatINR(spent)}</p>
-        </div>
-        <div className={ui.card + ' col-span-2'}>
-          <p className={ui.muted}>Left this month</p>
-          <p className="text-2xl font-semibold">
-            {formatINR(income - spent < 0 ? 0 : income - spent)}
-          </p>
+          <p className="text-lg font-semibold">{formatINR(spentPaise)}</p>
         </div>
       </section>
+
+      {thisMonth && (
+        <Link
+          href="/plan"
+          className={ui.card + ' flex flex-col gap-1'}
+          aria-label="Plan for this month"
+        >
+          <p className={ui.muted}>
+            {monthLabel(month)}: free after bills{loan && thisMonth.loan ? ` → ${loan.name}` : ''}
+          </p>
+          <p className="text-3xl font-semibold">{formatINR(thisMonth.availablePaise)}</p>
+          {thisMonth.loan && (
+            <p className={ui.muted}>
+              {formatINR(thisMonth.loanPaymentPaise)} goes to the loan ·{' '}
+              {formatINR(thisMonth.sparePaise)} spare
+            </p>
+          )}
+        </Link>
+      )}
 
       {uncategorised > 0 && (
         <Link href="/transactions" className={ui.card + ' flex items-center justify-between'}>
@@ -91,6 +122,48 @@ export default function HomePage() {
           </ul>
         )}
       </section>
+
+      {loan && built?.sweepState && built.plan.loan && (
+        <Link href={`/loans/${loan.id}`} className={ui.card + ' flex flex-col gap-1'}>
+          <p className={ui.muted}>{loan.name}</p>
+          <p className="text-2xl font-semibold">{formatINR(built.sweepState.openingPaise)}</p>
+          <p className={ui.muted}>
+            {built.plan.loan.payoffMonth
+              ? `Clears ${monthLabel(built.plan.loan.payoffMonth)} at the current pace`
+              : 'Not cleared within the next year'}
+            {' · '}interest so far {formatINR(built.sweepState.interestToDatePaise)}
+          </p>
+        </Link>
+      )}
+
+      {goal && progress && (
+        <Link href="/goals" className={ui.card + ' flex flex-col gap-2'}>
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{goal.goal.name}</span>
+            <span className="tabular-nums">
+              {formatINR(progress.fundedPaise)} / {formatINR(progress.targetPaise)}
+            </span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label="Funded"
+            aria-valuenow={progress.percentFunded}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+          >
+            <div
+              className="h-full rounded-full bg-teal-700 dark:bg-teal-500"
+              style={{ width: `${progress.percentFunded}%` }}
+            />
+          </div>
+          <p className={ui.muted}>
+            {progress.gapPaise > 0
+              ? `Still needed ${formatINR(progress.gapPaise)}`
+              : 'Fully funded'}
+          </p>
+        </Link>
+      )}
 
       <Link href="/add" className={ui.primary + ' flex items-center justify-center'}>
         Add transaction

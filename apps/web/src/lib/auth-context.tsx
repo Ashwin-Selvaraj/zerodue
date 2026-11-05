@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { api, NetworkError, refreshSession } from './api';
-import { clearLocalData, readMeta, writeMeta } from './db';
+import { claimLocalData, clearLocalData, readMeta, writeMeta } from './db';
 
 type Status = 'loading' | 'authenticated' | 'offline' | 'unauthenticated';
 
@@ -39,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const session = await refreshSession();
         if (cancelled) return;
         if (session) {
+          await claimLocalData(session.user.id);
+          if (cancelled) return;
           setUser(session.user);
           setStatus('authenticated');
           void writeMeta(PROFILE_KEY, session.user);
@@ -60,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const adopt = useCallback((next: UserDto) => {
+  const adopt = useCallback(async (next: UserDto) => {
+    await claimLocalData(next.id);
     setUser(next);
     setStatus('authenticated');
     void writeMeta(PROFILE_KEY, next);

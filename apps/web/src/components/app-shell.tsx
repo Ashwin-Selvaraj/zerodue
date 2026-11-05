@@ -9,7 +9,7 @@ const TABS = [
   { href: '/', label: 'Home', icon: '⌂' },
   { href: '/transactions', label: 'Transactions', icon: '☰' },
   { href: '/add', label: 'Add', icon: '+' },
-  { href: '/bills', label: 'Bills', icon: '◷' },
+  { href: '/plan', label: 'Plan', icon: '◔' },
   { href: '/more', label: 'More', icon: '⋯' },
 ];
 

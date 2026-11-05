@@ -1,6 +1,7 @@
 'use client';
 
 import { formatDateTime, formatINR } from '@zerodue/shared';
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { ui } from '@/components/ui';
 import { typedToPaise } from '@/lib/amount';
@@ -9,6 +10,13 @@ import { getDb } from '@/lib/db';
 import { useAccounts, useCategories, useOutboxCounts, useSyncState } from '@/lib/queries';
 import { deleteRecord, saveRecord } from '@/lib/repo';
 import { syncNow } from '@/lib/sync';
+
+const SECTIONS = [
+  { href: '/bills', label: 'Bills' },
+  { href: '/loans', label: 'Loans' },
+  { href: '/goals', label: 'Goals and money coming' },
+  { href: '/reports', label: 'Reports' },
+];
 
 const ACCOUNT_TYPES = [
   ['BANK', 'Bank account'],
@@ -61,6 +69,18 @@ export default function MorePage() {
   return (
     <main className={ui.page}>
       <h1 className={ui.title}>More</h1>
+
+      <nav aria-label="Sections" className="grid grid-cols-2 gap-3">
+        {SECTIONS.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className={ui.card + ' flex min-h-14 items-center font-medium'}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
 
       <section aria-label="Sync" className={ui.card}>
         <h2 className="mb-1 font-medium">Sync</h2>

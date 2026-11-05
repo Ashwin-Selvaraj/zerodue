@@ -1,10 +1,18 @@
 import type {
   AccountDto,
+  AllocationRuleDto,
   AmountPeriodDto,
   CategoryDto,
   CategoryRuleDto,
+  GoalContributionDto,
+  GoalDto,
+  LoanDto,
+  LoanLedgerDto,
   OccurrenceDto,
+  PlannedPaymentDto,
+  ReceivableDto,
   RecurringItemDto,
+  ScenarioDto,
   SyncEntity,
   TransactionDto,
 } from '@zerodue/shared';
@@ -49,6 +57,14 @@ export const TABLE_NAMES: Record<SyncEntity, string> = {
   recurringItem: 'recurringItems',
   recurringAmountPeriod: 'recurringPeriods',
   recurringOccurrence: 'occurrences',
+  loan: 'loans',
+  loanLedgerEntry: 'loanLedger',
+  loanPlannedPayment: 'plannedPayments',
+  scenario: 'scenarios',
+  receivable: 'receivables',
+  goal: 'goals',
+  goalContribution: 'goalContributions',
+  allocationRule: 'allocationRules',
 };
 
 export class ZeroDueDB extends Dexie {
@@ -61,6 +77,14 @@ export class ZeroDueDB extends Dexie {
   recurringItems!: Table<RecurringItemDto, string>;
   recurringPeriods!: Table<AmountPeriodDto, string>;
   occurrences!: Table<OccurrenceDto, string>;
+  loans!: Table<LoanDto, string>;
+  loanLedger!: Table<LoanLedgerDto, string>;
+  plannedPayments!: Table<PlannedPaymentDto, string>;
+  scenarios!: Table<ScenarioDto, string>;
+  receivables!: Table<ReceivableDto, string>;
+  goals!: Table<GoalDto, string>;
+  goalContributions!: Table<GoalContributionDto, string>;
+  allocationRules!: Table<AllocationRuleDto, string>;
 
   constructor(name = 'zerodue') {
     super(name);
@@ -78,6 +102,16 @@ export class ZeroDueDB extends Dexie {
       recurringItems: 'id',
       recurringPeriods: 'id, recurringItemId',
       occurrences: 'id, dueDate, recurringItemId, status',
+    });
+    this.version(3).stores({
+      loans: 'id, status',
+      loanLedger: 'id, loanId, month',
+      plannedPayments: 'id, loanId, month',
+      scenarios: 'id, loanId',
+      receivables: 'id, status, expectedDate',
+      goals: 'id',
+      goalContributions: 'id, goalId',
+      allocationRules: 'id, recurringItemId',
     });
   }
 
@@ -130,3 +164,19 @@ export async function clearLocalData(): Promise<void> {
 }
 
 export const DEVICE_ID_KEY = 'deviceId';
+const OWNER_KEY = 'dataOwner';
+const PROFILE_KEY = 'profile';
+
+/**
+ * Makes sure what is stored here belongs to this user. If someone else's data is found (an account
+ * was deleted or switched without signing out), it is wiped before the new user's data is fetched.
+ * Returns true when data was cleared.
+ */
+export async function claimLocalData(userId: string): Promise<boolean> {
+  const owner =
+    (await readMeta<string>(OWNER_KEY)) ?? (await readMeta<{ id?: string }>(PROFILE_KEY))?.id;
+  const foreign = owner !== undefined && owner !== userId;
+  if (foreign) await clearLocalData();
+  await writeMeta(OWNER_KEY, userId);
+  return foreign;
+}
