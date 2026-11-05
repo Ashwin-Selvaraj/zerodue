@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
+import { Test, type TestingModuleBuilder } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { Clock } from '../src/common/clock';
@@ -9,9 +9,13 @@ import { configureApp } from '../src/setup-app';
 export const PASSWORD = 'correct-horse-battery';
 
 /** Boots the real app. Pass a clock function to pin "now" (default: the real time). */
-export async function createTestApp(now?: () => Date): Promise<INestApplication> {
+export async function createTestApp(
+  now?: () => Date,
+  customise?: (builder: TestingModuleBuilder) => void,
+): Promise<INestApplication> {
   const builder = Test.createTestingModule({ imports: [AppModule] });
   if (now) builder.overrideProvider(Clock).useValue({ now });
+  customise?.(builder);
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication();
   configureApp(app);

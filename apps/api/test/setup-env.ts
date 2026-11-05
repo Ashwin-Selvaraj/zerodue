@@ -8,3 +8,4 @@ process.env.JWT_REFRESH_SECRET = 'e2e-refresh-secret-0123456789';
 process.env.WEB_ORIGIN = 'http://localhost:3000';
 process.env.ALLOW_SIGNUP = 'true';
 process.env.AUTH_RATE_LIMIT = '1000';
+process.env.SCHEDULER = 'false'; // tests drive the reminder jobs by hand

@@ -8,6 +8,7 @@ import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ConfigModule } from './config/config.module';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
+import { RemindersModule } from './reminders/reminders.module';
 import { RecordsModule } from './records/records.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { UsersModule } from './users/users.module';
@@ -23,6 +24,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     TrackingModule,
+    RemindersModule,
   ],
   controllers: [HealthController],
   providers: [

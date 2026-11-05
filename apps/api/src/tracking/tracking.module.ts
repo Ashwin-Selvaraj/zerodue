@@ -26,5 +26,6 @@ import { TransactionsService } from './transactions.service';
     ...PLANNING_CONTROLLERS,
   ],
   providers: [TransactionsService, RecurringService, SyncService],
+  exports: [RecurringService],
 })
 export class TrackingModule {}

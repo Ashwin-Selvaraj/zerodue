@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
 const bool = z.enum(['true', 'false']).transform((v) => v === 'true');
+/** An env var left empty (as in .env.example) counts as not set. */
+const optional = z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional());
 
 const envSchema = z
   .object({
@@ -16,6 +18,11 @@ const envSchema = z
     ALLOW_SIGNUP: bool.default('true'),
     COOKIE_SECURE: bool.optional(),
     AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(10),
+    VAPID_PUBLIC_KEY: optional,
+    VAPID_PRIVATE_KEY: optional,
+    VAPID_SUBJECT: z.string().default('mailto:admin@example.com'),
+    /** Turn off the background jobs (reminders, due-date generation), e.g. for a second API instance. */
+    SCHEDULER: bool.default('true'),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
@@ -43,6 +50,12 @@ export class AppConfig {
 
   get isProduction(): boolean {
     return this.env.NODE_ENV === 'production';
+  }
+
+  /** Web Push keys, or null when push is not configured (reminders then show in the app only). */
+  get vapid(): { publicKey: string; privateKey: string; subject: string } | null {
+    const { VAPID_PUBLIC_KEY: publicKey, VAPID_PRIVATE_KEY: privateKey, VAPID_SUBJECT } = this.env;
+    return publicKey && privateKey ? { publicKey, privateKey, subject: VAPID_SUBJECT } : null;
   }
 
   /** Refresh cookie `Secure` flag: explicit setting wins, otherwise on in production. */
