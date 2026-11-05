@@ -6,6 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { CommonModule } from './common/clock';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ConfigModule } from './config/config.module';
+import { DevicesModule } from './devices/devices.module';
+import { IngestModule } from './ingest/ingest.module';
 import { HealthController } from './health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { RemindersModule } from './reminders/reminders.module';
@@ -23,6 +25,8 @@ import { UsersModule } from './users/users.module';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
     AuthModule,
     UsersModule,
+    DevicesModule,
+    IngestModule,
     TrackingModule,
     RemindersModule,
   ],

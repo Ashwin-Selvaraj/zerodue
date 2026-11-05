@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { AuditService } from '../audit/audit.service';
 import { CurrentUser, type AuthUser } from '../common/current-user.decorator';
 import { DEVICE_HEADER, writeContext } from '../common/device';
+import { DeviceAccess } from '../common/device-access.decorator';
 import { RecordsService } from '../records/records.service';
 import {
   AccountDto,
@@ -92,6 +93,7 @@ export class CategoriesController {
   }
 
   /** The categories shown as action buttons on the "What type of payment?" notification. */
+  @DeviceAccess()
   @Get('quick-picks')
   @ApiOkResponse({ type: [CategoryDto] })
   async quickPicks(@CurrentUser() user: AuthUser) {

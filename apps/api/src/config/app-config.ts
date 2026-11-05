@@ -18,11 +18,16 @@ const envSchema = z
     ALLOW_SIGNUP: bool.default('true'),
     COOKIE_SECURE: bool.optional(),
     AUTH_RATE_LIMIT: z.coerce.number().int().positive().default(10),
+    /** Max messages a phone may send per minute. */
+    INGEST_RATE_LIMIT: z.coerce.number().int().positive().default(60),
     VAPID_PUBLIC_KEY: optional,
     VAPID_PRIVATE_KEY: optional,
     VAPID_SUBJECT: z.string().default('mailto:admin@example.com'),
     /** Turn off the background jobs (reminders, due-date generation), e.g. for a second API instance. */
     SCHEDULER: bool.default('true'),
+    /** The address the phone app should call; defaults to the address the pairing request arrived on. */
+    PUBLIC_API_URL: optional,
+    DEVICE_PAIRING_CODE_TTL_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;

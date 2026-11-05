@@ -1,0 +1,199 @@
+[
+  {
+    "name": "UPI debit with VPA and reference",
+    "sender": "VM-ICICIB",
+    "body": "ICICI Bank Acct XX123 debited for Rs 450.00 on 03-Nov-26; SHELL PETROL PUMP credited. UPI:312345678901. Call 18002662 for dispute. SMS BLOCK 123 to 9215676766.",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 45000,
+        "merchant": "SHELL PETROL PUMP",
+        "accountTail": "123",
+        "upiRef": "312345678901",
+        "occurredAt": "2026-11-03T12:00:00+05:30",
+        "channel": "SMS_UPI",
+        "confidence": 1
+      }
+    }
+  },
+  {
+    "name": "Credit from a person",
+    "sender": "AX-ICICIT",
+    "body": "ICICI Bank Acct XX123 credited with Rs. 5,000.00 on 04-11-2026 14:05:22 by A FRIEND. UPI Ref no 412345678901.",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "CREDIT",
+        "amountPaise": 500000,
+        "merchant": "A FRIEND",
+        "accountTail": "123",
+        "upiRef": "412345678901",
+        "occurredAt": "2026-11-04T14:05:22+05:30",
+        "channel": "SMS_UPI",
+        "confidence": 1
+      }
+    }
+  },
+  {
+    "name": "Card spend, four digits, merchant after 'at'",
+    "sender": "VK-ICICIS",
+    "body": "Rs 1,200.00 spent on ICICI Bank Card XX4567 on 02/11/26 at SWIGGY. Avl Lmt: Rs 88,000.00. To dispute call 18002662",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 120000,
+        "merchant": "SWIGGY",
+        "accountTail": "4567",
+        "occurredAt": "2026-11-02T12:00:00+05:30",
+        "channel": "SMS_BANK",
+        "confidence": 0.85
+      }
+    }
+  },
+  {
+    "name": "Debit to a VPA with no merchant name",
+    "sender": "VM-ICICIB",
+    "body": "Your a/c no. XXXXXXXX1234 is debited for Rs.75.50 on 05-Nov-2026 and credited to VPA shell.fuel@icici (UPI Ref 512345678901).",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 7550,
+        "vpa": "shell.fuel@icici",
+        "accountTail": "1234",
+        "upiRef": "512345678901",
+        "occurredAt": "2026-11-05T12:00:00+05:30",
+        "channel": "SMS_UPI",
+        "confidence": 1
+      }
+    }
+  },
+  {
+    "name": "Balance after the payment is not the amount",
+    "sender": "VM-ICICIB",
+    "body": "Avl Bal Rs 9,999.00 after: Rs 20.00 debited at CHAI POINT on 05-Nov-26 12:30.",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 2000,
+        "merchant": "CHAI POINT",
+        "occurredAt": "2026-11-05T12:30:00+05:30",
+        "channel": "SMS_BANK",
+        "confidence": 0.85
+      }
+    }
+  },
+  {
+    "name": "Withdrawal with a rupee sign and an ATM reference",
+    "sender": "VM-ICICIB",
+    "body": "₹2,000 withdrawn from ICICI Bank Acct ending 4567 on 1 Nov 2026. Ref no 123456789012",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 200000,
+        "accountTail": "4567",
+        "upiRef": "123456789012",
+        "occurredAt": "2026-11-01T12:00:00+05:30",
+        "channel": "SMS_UPI",
+        "confidence": 0.85
+      }
+    }
+  },
+  {
+    "name": "Salary credit with no date, a bare UPI mention and a sender after 'from'",
+    "sender": "VM-ICICIB",
+    "body": "INR 60,000 credited to your account via UPI from ACME PAYROLL",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "CREDIT",
+        "amountPaise": 6000000,
+        "merchant": "ACME PAYROLL",
+        "channel": "SMS_UPI",
+        "confidence": 0.85
+      }
+    }
+  },
+  {
+    "name": "Date that is not a real day is left out",
+    "sender": "VM-ICICIB",
+    "body": "Rs 10 debited on 31-02-26",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 1000,
+        "channel": "SMS_BANK",
+        "confidence": 0.7
+      }
+    }
+  },
+  {
+    "name": "Month name that is not a month is left out",
+    "sender": "VM-ICICIB",
+    "body": "Rs 10 debited on 05-Foo-26",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 1000,
+        "channel": "SMS_BANK",
+        "confidence": 0.7
+      }
+    }
+  },
+  {
+    "name": "Month 13 is left out",
+    "sender": "VM-ICICIB",
+    "body": "Rs 10 debited on 05-13-26",
+    "expected": {
+      "kind": "payment",
+      "payment": {
+        "direction": "DEBIT",
+        "amountPaise": 1000,
+        "channel": "SMS_BANK",
+        "confidence": 0.7
+      }
+    }
+  },
+  {
+    "name": "One-time password",
+    "sender": "VM-ICICIB",
+    "body": "123456 is the OTP for your transaction of Rs 450.00 at SHELL. Do not share.",
+    "expected": { "kind": "ignored", "reason": "OTP" }
+  },
+  {
+    "name": "Offer with an amount but no payment",
+    "sender": "VM-ICICIB",
+    "body": "Pre-approved loan up to Rs 5,00,000 for you. Apply now.",
+    "expected": { "kind": "ignored", "reason": "NO_DIRECTION" }
+  },
+  {
+    "name": "No amount at all",
+    "sender": "VM-ICICIB",
+    "body": "Your statement has been generated. Amount was debited earlier.",
+    "expected": { "kind": "ignored", "reason": "NO_AMOUNT" }
+  },
+  {
+    "name": "Zero amount",
+    "sender": "VM-ICICIB",
+    "body": "Rs 0.00 debited",
+    "expected": { "kind": "ignored", "reason": "NO_AMOUNT" }
+  },
+  {
+    "name": "Only a balance is shown",
+    "sender": "VM-ICICIB",
+    "body": "Your available balance is Rs 12,000.00 after the credit.",
+    "expected": { "kind": "ignored", "reason": "NO_AMOUNT" }
+  },
+  {
+    "name": "Sender not on the list",
+    "sender": "AD-SHOPPE",
+    "body": "Rs 450.00 debited at SHELL",
+    "expected": { "kind": "ignored", "reason": "NOT_ALLOWED_SENDER" }
+  }
+]

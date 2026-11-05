@@ -14,9 +14,11 @@ import {
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, type AuthUser } from '../common/current-user.decorator';
 import { DEVICE_HEADER, writeContext } from '../common/device';
+import { DeviceAccess } from '../common/device-access.decorator';
 import { RecordsService } from '../records/records.service';
 import {
   BulkCategoriseDto,
+  CategoriseDto,
   TransactionDto,
   TransactionInputDto,
   TransactionPageDto,
@@ -59,6 +61,34 @@ export class TransactionsController {
     @Headers(DEVICE_HEADER) device?: string,
   ) {
     return this.transactions.bulkCategorise(user.id, body, writeContext(device));
+  }
+
+  /** Captured payments waiting for a category (the inbox). */
+  @DeviceAccess()
+  @Get('uncategorised')
+  uncategorised(@CurrentUser() user: AuthUser) {
+    return this.transactions.uncategorised(user.id);
+  }
+
+  /** First answer wins; a different later answer from a phone or push gets 409 with the current category. */
+  @DeviceAccess()
+  @Post(':id/categorise')
+  @HttpCode(200)
+  @ApiOkResponse({ type: TransactionDto })
+  categorise(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: CategoriseDto,
+  ) {
+    return this.transactions.categorise(user.id, id, body, { deviceId: user.deviceId ?? null });
+  }
+
+  @DeviceAccess()
+  @Post(':id/ignore')
+  @HttpCode(200)
+  @ApiOkResponse({ type: TransactionDto })
+  ignore(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.transactions.ignore(user.id, id, { deviceId: user.deviceId ?? null });
   }
 
   @Get(':id')

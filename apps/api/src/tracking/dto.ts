@@ -28,6 +28,7 @@ import {
   accountSchema,
   amountPeriodInputSchema,
   bulkCategoriseSchema,
+  categoriseSchema,
   categoryInputSchema,
   categoryPatchSchema,
   categoryRuleInputSchema,
@@ -113,3 +114,5 @@ export class GoalContributionDto extends createZodDto(goalContributionSchema) {}
 export class AllocationRuleInputDto extends createZodDto(allocationRuleInputSchema) {}
 export class AllocationRulePatchDto extends createZodDto(allocationRulePatchSchema) {}
 export class AllocationRuleDto extends createZodDto(allocationRuleSchema) {}
+
+export class CategoriseDto extends createZodDto(categoriseSchema) {}

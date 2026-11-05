@@ -1,6 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import { addMonths, type BulkCategoriseInput, type TransactionQuery } from '@zerodue/shared';
+import {
+  addMonths,
+  type BulkCategoriseInput,
+  type CategoriseInput,
+  type TransactionQuery,
+} from '@zerodue/shared';
 import { PrismaService } from '../prisma/prisma.service';
 import { RecordsService, type Row, type WriteContext } from '../records/records.service';
 
@@ -106,5 +116,88 @@ export class TransactionsService {
       );
     }
     return updated;
+  }
+
+  // ───────────────────────── one-tap categorising (phone notification, inbox) ─────────────────────────
+
+  /**
+   * Sets a category on a captured payment. The first answer wins: if it is already categorised
+   * differently, a notification or push gets 409 with the current category so it can update itself.
+   * An edit made in the app (`WEB`) always overrides.
+   */
+  async categorise(
+    userId: string,
+    id: string,
+    input: CategoriseInput,
+    ctx: WriteContext,
+  ): Promise<Record<string, unknown>> {
+    const txn = await this.prisma.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+    if (!txn) throw new NotFoundException('transaction not found');
+
+    if (txn.categoryId !== input.categoryId) {
+      if (txn.categoryId && input.via !== 'WEB') {
+        throw new ConflictException({
+          statusCode: 409,
+          error: 'Conflict',
+          message: 'Already categorised',
+          currentCategoryId: txn.categoryId,
+        });
+      }
+      await this.records.update(
+        userId,
+        'transaction',
+        id,
+        {
+          categoryId: input.categoryId,
+          categorisedVia: input.via === 'WEB' ? 'MANUAL' : input.via,
+          status: 'POSTED',
+        },
+        ctx,
+      );
+    }
+    if (input.createRule) await this.rememberMerchant(userId, txn, input.categoryId, ctx);
+    return this.records.get(userId, 'transaction', id);
+  }
+
+  /** The next payment from the same merchant (or UPI address) is categorised the same way. */
+  private async rememberMerchant(
+    userId: string,
+    txn: { merchant: string | null; vpa: string | null },
+    categoryId: string,
+    ctx: WriteContext,
+  ): Promise<void> {
+    const rule = txn.merchant
+      ? { matchType: 'MERCHANT_EQUALS', pattern: txn.merchant }
+      : txn.vpa
+        ? { matchType: 'VPA_EQUALS', pattern: txn.vpa }
+        : null;
+    if (!rule) return;
+    const exists = await this.prisma.categoryRule.findFirst({
+      where: {
+        userId,
+        deletedAt: null,
+        matchType: rule.matchType as 'MERCHANT_EQUALS' | 'VPA_EQUALS',
+        pattern: { equals: rule.pattern, mode: 'insensitive' },
+      },
+    });
+    if (exists) return;
+    await this.records.create(userId, 'categoryRule', { ...rule, categoryId }, ctx);
+  }
+
+  /** "This isn't a real payment": a misread message. Kept, but out of every total. */
+  async ignore(userId: string, id: string, ctx: WriteContext): Promise<Record<string, unknown>> {
+    await this.records.update(userId, 'transaction', id, { status: 'IGNORED' }, ctx);
+    return this.records.get(userId, 'transaction', id);
+  }
+
+  /** Captured payments still waiting for a category, newest first. */
+  async uncategorised(userId: string) {
+    const [page, count] = await Promise.all([
+      this.list(userId, { status: 'PENDING_CATEGORY', limit: 100 } as TransactionQuery),
+      this.prisma.transaction.count({
+        where: { userId, deletedAt: null, status: 'PENDING_CATEGORY' },
+      }),
+    ]);
+    return { items: page.items, count };
   }
 }
