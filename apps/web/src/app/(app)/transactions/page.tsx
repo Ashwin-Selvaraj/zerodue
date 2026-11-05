@@ -211,7 +211,7 @@ export default function TransactionsPage() {
 
       {selecting && (
         <div className="fixed inset-x-0 bottom-14 border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950">
-          <div className="mx-auto flex max-w-md gap-2">
+          <div className="mx-auto flex max-w-md gap-2 md:max-w-2xl">
             <select
               className={ui.input}
               aria-label="Set category"

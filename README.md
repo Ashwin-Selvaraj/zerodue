@@ -65,6 +65,7 @@ Open <http://localhost:3000>, choose **Create an account**, and sign in. Set `AL
 | `pnpm build`                  | Builds shared, api and web                                                                             |
 | `pnpm test`                   | Runs unit tests (vitest for shared/web, jest for api)                                                  |
 | `pnpm test:e2e`               | API end-to-end tests against the `zerodue_test` database (needs Postgres and migrations applied to it) |
+| `pnpm test:browser`           | Playwright tests in a real browser, phone and desktop (run `pnpm build` first; see `apps/e2e`)         |
 | `pnpm lint`                   | ESLint across all packages                                                                             |
 | `pnpm format`                 | Prettier write                                                                                         |
 | `pnpm db:up` / `pnpm db:down` | Start / stop local PostgreSQL                                                                          |
@@ -129,7 +130,9 @@ The backup format and its tests live in `packages/shared/src/backup/`.
 
 ## Deploy
 
-**Whole stack with Docker Compose** — put real `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in `.env`, then `docker compose up --build`. This starts Postgres, the API (applies migrations on start) and the web app. Behind HTTPS set `COOKIE_SECURE=true`, `WEB_ORIGIN` to the web origin, and rebuild web with `NEXT_PUBLIC_API_URL` pointing at the API. Put the web app and API on subdomains of one domain (`app.example.com`, `api.example.com`) so the refresh cookie stays same-site. The Dockerfiles are not yet exercised locally (CI builds them).
+**On a server with HTTPS:** follow [deploy/README.md](deploy/README.md) (Caddy, Postgres backups, updates, signing the Android release). It uses `deploy/docker-compose.prod.yml`.
+
+**Whole stack with Docker Compose (local or LAN, plain http)** — put real `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET` in `.env`, then `docker compose up --build`. This starts Postgres, the API (applies migrations on start) and the web app. Behind HTTPS set `COOKIE_SECURE=true`, `WEB_ORIGIN` to the web origin, and rebuild web with `NEXT_PUBLIC_API_URL` pointing at the API. Put the web app and API on subdomains of one domain (`app.example.com`, `api.example.com`) so the refresh cookie stays same-site. The Dockerfiles are not yet exercised locally (CI builds them).
 
 **API (without Docker)** — run PostgreSQL, set the env vars from `.env.example` (production secrets, `WEB_ORIGIN` = your PWA origin), then `pnpm --filter @zerodue/api build`, `pnpm --filter @zerodue/api prisma:deploy` and `pnpm --filter @zerodue/api start` behind HTTPS (Caddy/nginx). In production the API refuses to start with placeholder secrets.
 
@@ -149,17 +152,17 @@ The backup format and its tests live in `packages/shared/src/backup/`.
 
 ## Milestones
 
-| #   | Milestone                                                                |
-| --- | ------------------------------------------------------------------------ |
-| M0  | Assumptions & design (architecture, Prisma schema, API spec, wireframes) |
-| M1  | Foundations (auth, Prisma, Swagger, PWA shell, INR utils)                |
-| M2  | Finance engine in `packages/shared` + golden tests                       |
-| M3  | Core tracking (transactions, categories, recurring, offline sync)        |
-| M4  | Loans, planner, dashboard, seed data                                     |
-| M5  | Reminders & web push                                                     |
-| M6  | Automatic SMS capture (Flutter + `/ingest/sms`)                          |
-| M7  | Import/export & privacy                                                  |
-| M8  | Hardening, CI APK build, deployment                                      |
+| #   | Milestone                                                                 |
+| --- | ------------------------------------------------------------------------- |
+| M0  | Assumptions & design (architecture, Prisma schema, API spec, wireframes)  |
+| M1  | Foundations (auth, Prisma, Swagger, PWA shell, INR utils)                 |
+| M2  | Finance engine in `packages/shared` + golden tests                        |
+| M3  | Core tracking (transactions, categories, recurring, offline sync)         |
+| M4  | Loans, planner, dashboard, seed data                                      |
+| M5  | Reminders & web push                                                      |
+| M6  | Automatic SMS capture (Flutter + `/ingest/sms`)                           |
+| M7  | Import/export & privacy (export, backup, lock done; ICICI import pending) |
+| M8  | Hardening, CI APK build, deployment                                       |
 
 ## Privacy
 

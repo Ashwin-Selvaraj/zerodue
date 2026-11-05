@@ -262,5 +262,26 @@ describe('ZeroDue auth + users (e2e)', () => {
         await limited.close();
       }
     });
+
+    it('counts attempts per client behind a proxy, not per proxy', async () => {
+      process.env.AUTH_RATE_LIMIT = '2';
+      process.env.TRUST_PROXY = 'true';
+      const proxied = await createApp();
+      try {
+        const attempt = (client: string) =>
+          request(proxied.getHttpServer())
+            .post('/auth/login')
+            .set('X-Forwarded-For', client)
+            .send({ email: 'x@example.com', password: 'whatever-123456' });
+        const first = [await attempt('203.0.113.1'), await attempt('203.0.113.1')];
+        expect(first.map((r) => r.status)).toEqual([401, 401]);
+        expect((await attempt('203.0.113.1')).status).toBe(429);
+        expect((await attempt('203.0.113.2')).status).toBe(401); // a different client still gets through
+      } finally {
+        process.env.AUTH_RATE_LIMIT = '1000';
+        delete process.env.TRUST_PROXY;
+        await proxied.close();
+      }
+    });
   });
 });

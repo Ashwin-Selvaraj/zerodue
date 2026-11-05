@@ -17,7 +17,8 @@
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
     "prepare": "husky || true",
-    "test:e2e": "pnpm --filter @zerodue/api test:e2e"
+    "test:e2e": "pnpm --filter @zerodue/api test:e2e",
+    "test:browser": "pnpm --filter @zerodue/e2e test:browser"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

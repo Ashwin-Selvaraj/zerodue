@@ -1,0 +1,17 @@
+{
+  "name": "@zerodue/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ZeroDue browser tests (Playwright)",
+  "scripts": {
+    "test:browser": "playwright test",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.5",
+    "@zerodue/config": "workspace:*",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2"
+  }
+}

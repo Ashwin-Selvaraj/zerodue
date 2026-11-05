@@ -5,7 +5,7 @@ import { setAccessToken } from './api';
 import { getDb, readMeta, resetDbForTests } from './db';
 import { resetDeviceIdCacheForTests } from './device';
 import { saveRecord } from './repo';
-import { getSyncState, resetSyncStateForTests, syncNow } from './sync';
+import { getSyncState, resetSyncStateForTests, startSyncing, syncNow } from './sync';
 
 let n = 0;
 type PushOp = {
@@ -350,5 +350,29 @@ describe('orchestration', () => {
     server({});
     await syncNow();
     expect(getSyncState().status).toBe('idle');
+  });
+});
+
+describe('connection changes', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('shows offline as soon as the connection drops, and syncs when it returns', async () => {
+    const win = new EventTarget();
+    const doc = Object.assign(new EventTarget(), { visibilityState: 'visible' });
+    vi.stubGlobal('window', win);
+    vi.stubGlobal('document', doc);
+    server({});
+    const stop = startSyncing();
+    await vi.waitFor(() => expect(getSyncState().status).toBe('idle'));
+
+    win.dispatchEvent(new Event('offline'));
+    expect(getSyncState().status).toBe('offline');
+
+    win.dispatchEvent(new Event('online'));
+    await vi.waitFor(() => expect(getSyncState().status).toBe('idle'));
+
+    stop();
+    win.dispatchEvent(new Event('offline'));
+    expect(getSyncState().status).toBe('idle'); // no longer listening
   });
 });

@@ -1,6 +1,6 @@
 /** Shared Tailwind class strings so every screen looks the same. All tap targets are at least 48px. */
 export const ui = {
-  page: 'mx-auto flex w-full max-w-md flex-col gap-4 px-4 pb-28 pt-6',
+  page: 'mx-auto flex w-full max-w-md flex-col gap-4 px-4 pb-28 pt-6 md:max-w-2xl',
   title: 'text-2xl font-semibold',
   card: 'rounded-2xl border border-slate-200 p-4 dark:border-slate-800',
   label: 'flex flex-col gap-1 text-sm',

@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto flex max-w-md justify-end px-4 pt-3">
+      <div className="mx-auto flex max-w-md justify-end px-4 pt-3 md:max-w-2xl">
         <SyncBadge />
       </div>
       {children}
@@ -28,7 +28,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           aria-label="Main"
           className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95"
         >
-          <ul className="mx-auto grid max-w-md grid-cols-5">
+          <ul className="mx-auto grid max-w-md grid-cols-5 md:max-w-2xl">
             {TABS.map((tab) => {
               const active = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
               const isAdd = tab.href === '/add';

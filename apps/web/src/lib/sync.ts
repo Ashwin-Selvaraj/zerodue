@@ -209,14 +209,18 @@ export function startSyncing(): () => void {
   void readMeta<string>(LAST_SYNC_KEY).then((value) => value && setState({ lastSyncedAt: value }));
   void syncNow();
   const onOnline = () => void syncNow();
+  // say so as soon as the connection drops, instead of only after the next sync fails
+  const onOffline = () => setState({ status: 'offline' });
   const onVisible = () => document.visibilityState === 'visible' && void syncNow();
   const timer = setInterval(() => void syncNow(), 30_000);
   window.addEventListener('online', onOnline);
+  window.addEventListener('offline', onOffline);
   document.addEventListener('visibilitychange', onVisible);
   return () => {
     clearInterval(timer);
     clearTimeout(debounce);
     window.removeEventListener('online', onOnline);
+    window.removeEventListener('offline', onOffline);
     document.removeEventListener('visibilitychange', onVisible);
   };
 }

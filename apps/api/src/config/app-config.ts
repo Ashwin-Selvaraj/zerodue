@@ -25,6 +25,8 @@ const envSchema = z
     VAPID_SUBJECT: z.string().default('mailto:admin@example.com'),
     /** Turn off the background jobs (reminders, due-date generation), e.g. for a second API instance. */
     SCHEDULER: bool.default('true'),
+    /** Behind one reverse proxy (Caddy, nginx): read the client address from X-Forwarded-For so limits are per client. */
+    TRUST_PROXY: bool.default('false'),
     /** The address the phone app should call; defaults to the address the pairing request arrived on. */
     PUBLIC_API_URL: optional,
     DEVICE_PAIRING_CODE_TTL_SECONDS: z.coerce.number().int().min(30).max(3600).default(300),

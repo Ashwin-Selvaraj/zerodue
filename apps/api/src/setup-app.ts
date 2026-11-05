@@ -10,6 +10,13 @@ import { AppConfig } from './config/app-config';
 export function configureApp(app: INestApplication): void {
   const config = app.get(AppConfig);
 
+  if (config.env.TRUST_PROXY) {
+    // one hop: the proxy in front of the API. Trusting more would let clients spoof their address.
+    (app.getHttpAdapter().getInstance() as { set(key: string, value: unknown): void }).set(
+      'trust proxy',
+      1,
+    );
+  }
   app.use(helmet());
   app.use(cookieParser());
   // CORS is pinned to the PWA origin; credentials are needed for the httpOnly refresh cookie.

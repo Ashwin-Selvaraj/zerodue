@@ -1,0 +1,10 @@
+{
+  "extends": "@zerodue/config/tsconfig/library.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"]
+  },
+  "include": ["*.ts", "tests/**/*.ts"]
+}

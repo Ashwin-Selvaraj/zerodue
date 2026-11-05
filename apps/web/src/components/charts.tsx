@@ -135,7 +135,12 @@ export function ColumnChart({
           rows={categories.map((c, i) => [c, ...data.map((s) => formatINR(s.values[i] ?? 0))])}
         />
       ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} className="w-full">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          role="img"
+          aria-label={title}
+          className="w-full md:mx-auto md:max-w-md"
+        >
           {ticks.map((tick) => (
             <g key={tick}>
               <line
@@ -376,7 +381,12 @@ export function LineChart({ title, points }: { title: string; points: LinePoint[
           ])}
         />
       ) : (
-        <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={title} className="w-full">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          role="img"
+          aria-label={title}
+          className="w-full md:mx-auto md:max-w-md"
+        >
           {ticks.map((tick) => (
             <g key={tick}>
               <line
