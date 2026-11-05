@@ -75,14 +75,13 @@ Open <http://localhost:3000>, choose **Create an account**, and sign in. Set `AL
 
 **Web** — `pnpm --filter @zerodue/web dev`, open <http://localhost:3000>.
 
-**Mobile** — Flutter is managed separately from pnpm.
+**Mobile** — Flutter is managed separately from pnpm (Flutter 3.47 stable; the Android project in `apps/mobile/android` is committed).
 
 ```bash
 cd apps/mobile
-bash tool/bootstrap_android.sh   # once: generates android/, sets label "ZeroDue" and package com.ashwin.zerodue
 flutter pub get
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:4000   # emulator; use your LAN IP on a device
-flutter analyze && flutter test
+flutter analyze && flutter test   # the reader is tested against packages/shared/src/sms/fixtures.json
+flutter build apk --debug         # needs the Android SDK; CI builds it and attaches the APK to each run
 ```
 
 ## Loading your own starting data
@@ -123,7 +122,7 @@ The message reader lives in `packages/shared/src/sms/parser.ts`; `fixtures.json`
 
 **Web** — set `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, then `pnpm --filter @zerodue/web build && pnpm --filter @zerodue/web start`, or deploy to any Node/Next host. The PWA requires HTTPS.
 
-**Mobile** — personal use, **sideloaded APK**: `flutter build apk --release --dart-define=API_BASE_URL=https://api.your-domain`. The signed-build guide arrives in M6/M8. Google Play restricts `READ_SMS`/`RECEIVE_SMS`, so Play Store distribution is out of scope.
+**Mobile** — personal use, **sideloaded APK**: `flutter build apk --release` (the server address is typed in the app when pairing). Release builds only talk to HTTPS servers; debug builds also allow plain http for a server on your own network. A signed-build guide arrives in M8. Google Play restricts `READ_SMS`/`RECEIVE_SMS`, so Play Store distribution is out of scope.
 
 ## Conventions
 
